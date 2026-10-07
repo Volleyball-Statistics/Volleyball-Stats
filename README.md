@@ -61,7 +61,9 @@ standing between you and losing a season.
    players in one go. Rosters are reused across matches, so you build each opponent once.
 3. **Matches** → pick the two teams and a date → Create.
 4. **Match** → pick a player, tap stats. `+` next to the set pills starts a new set.
-5. **Box Score** → full table for both teams, filterable by set, exportable to CSV.
+5. **Box Score** → full table for both teams, filterable by set, exportable to CSV. The
+   **Match** picker at the top shows any past match (or use **Box Score** next to a match on
+   the Matches tab) without changing which match the Match tab records into.
 
 ## Phone layout
 
@@ -78,7 +80,10 @@ What changes:
   play, and the error counterparts) sit behind **More stats**, which remembers whether you
   left it open.
 - A full-width **Undo last stat** button.
-- Every control is at least 44px — the iOS minimum touch target.
+- **Box Score shows one team at a time**, with a switch at the top, instead of both teams'
+  22-column tables stacked.
+- Every control is at least 44px — the iOS minimum touch target — and no text is smaller
+  than 11px.
 
 Nothing is duplicated in the data model; it's one app with two layouts.
 
@@ -89,13 +94,37 @@ This layout is what you get on the installed home-screen app — see
 
 Optional. Every attack still counts whether or not you locate it.
 
-**Recording.** Open **Attack placement** on the Match tab, pick **Hit** or **Tip**, tap a
-zone to arm it, then tap Kill / Att Error / In Play. The zone attaches to that one attack
-and clears, so it can never bleed onto the next rally. The three attack outcomes are
-repeated directly under the court, so the zone→outcome sequence never needs a scroll.
+**Recording.** Tap Kill / Att Error / In Play (or press `K` / `E` / `A`) and a popup asks
+where it landed:
 
-The court is **open by default on a desktop and closed on a phone** — the court plus the
-full stat pad don't both fit above the fold at 844px. Once you toggle it, your choice sticks.
+1. **Hit** or **Tip** (defaults to Hit every time; `H` / `T` on the keyboard).
+2. **Where the hitter took off** — Power, Middle, Right side or Back row, drawn on their
+   side of the net (`P` / `M` / `R` / `B`). It's remembered per player, and pre-filled from
+   position the first time (OH → Power, MB → Middle, OPP → Right side), so usually you skip
+   straight to the landing spot. The power side is the hitter's left, so it appears on the
+   right of the drawing, as you see it across the net.
+3. **Middle set type (optional).** When the take-off is Middle, **30 / 51 / 60** buttons
+   appear beside Hit / Tip (`3` / `5` / `6` on the keyboard). It isn't remembered between attacks, since a
+   middle's set changes play to play. Leave it blank and the attack still counts. The list is
+   `MIDDLE_PLAYS` in `index.html`.
+4. **Dug by (optional, In Play only).** The other team's numbers appear; tap the defender
+   who dug it and a Dig is logged for them too. It saves switching team tabs mid-rally, and
+   you stay on the attacking team. Pick it *before* the landing spot.
+5. **Tap where it landed** on the court. That records the attack and closes the popup.
+
+The confirmation that follows has an **Undo** button for about four seconds. It removes
+exactly that attack (and its dig), even if you've tapped something since.
+
+**Skip location** still records the attack, just without a spot. **Cancel** (or `Esc`, or
+tapping outside) records nothing. Only in-court landings can be tapped — skip for balls
+that went out or into the net.
+
+**Shot chart.** Each located attack is a line from take-off to landing. **Orange = hit,
+blue = tip** (tips also end in a diamond, hits in a circle, so it reads without colour).
+**Solid = kill, dashed = not a kill.** The Match tab shows a live chart for whichever team
+you're recording; it's open by default on a desktop and closed on a phone, and your toggle
+sticks. Attacks recorded before exact spots existed are drawn as landing marks only,
+scattered inside their zone.
 
 **Zones** are the positions of the team *being attacked*, drawn like a rotation sheet with
 the net at the top:
@@ -106,14 +135,33 @@ the net at the top:
      5      6      1      back row
 ```
 
+The zone is derived from the tapped spot: columns are 3 m wide and the front row is
+everything inside the 3 m line.
+
 **Reading it.** The Box Score gets an *attack placement* panel per team: pick a player (or
-all), filter to hits or tips, and each zone shows attacks, kills and hitting % for that
-selection. Cell shading is a single-hue ramp on attack volume — the count is printed in
+all), filter to hits or tips, and you get the shot chart (with an **All attacks / Kills
+only** switch) beside the zone grid, where each zone shows attacks, kills and hitting % for
+that selection. "Kills only" filters the shot chart, not the zone counts. Once any middle
+attack has a middle set, a **Middle sets** table shows attacks, kills, errors and hitting %
+for 30 / 51 / 60, with untyped middle attacks on their own row. **Tap a row** (or use the
+**Middle set: All / 30 / 51 / 60** filter) to narrow the whole panel — shot chart, zone grid
+and summary — to that middle set; tap it again to clear. It combines with the player and
+Shot filters. The table itself always shows every middle set so you can compare them, with
+the selected one highlighted. The app always says "middle set" in full, because "set" on
+its own means Set 1 / Set 2 of the match. Cell shading is a single-hue ramp on attack volume — the count is printed in
 every cell too, so it reads fine in greyscale. **Export CSV** gives long format, one row per
 player × shot × zone, easy to pivot.
 
 Attacks recorded without a zone are counted and called out explicitly under the court
 rather than silently dropped — otherwise the chart would look complete when it wasn't.
+
+## Fixing a mistake
+
+- **Undo** (the button, or `Z`) removes the most recent stat.
+- The confirmation after each tap has its own **Undo** for that tap.
+- **Tap any row in Recent** to change its player or stat, or delete it (Delete asks for a
+  second tap). Changing an attack to a non-attack stat drops its placement, since a dig has
+  no landing spot.
 
 ## Keyboard shortcuts (Match tab)
 

@@ -13,7 +13,7 @@
 <style>
   :root{
     --bg:#0f1216; --panel:#171b21; --panel2:#1e242c; --line:#2a323c;
-    --fg:#e8edf3; --muted:#93a1b1; --dim:#66727f;
+    --fg:#e8edf3; --muted:#93a1b1; --dim:#808c9a;
     --accent:#4da3ff; --good:#3ecf8e; --bad:#ff6b6b; --warn:#ffc857;
     --radius:10px;
     font-synthesis-weight:none;
@@ -88,6 +88,10 @@
      strip, a long log line) blows the track out past the viewport and drags
      every panel with it. Pin it to 0 and let scroll containers scroll. */
   .tally > *{min-width:0}
+  /* Box Score team switch: phones only — a desktop shows both teams stacked */
+  /* .teamtabs.boxteams, not .boxteams: .teamtabs (display:flex) is declared
+     later in this sheet and would otherwise win and show it on a desktop */
+  .teamtabs.boxteams{display:none;margin:11px 0 0}
   @media(max-width:820px){.tally{grid-template-columns:1fr}}
   .teamtabs{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:8px;margin-bottom:10px}
   .teamtabs button{flex:1;padding:7px;border-radius:6px;font-weight:700;font-size:12px;color:var(--muted);
@@ -102,7 +106,7 @@
     font-weight:800;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
   .pchip.on .no{background:var(--accent);color:#06121f}
   .pchip .pn{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pchip .pos{margin-left:auto;font-size:10px;color:var(--dim);font-weight:700;letter-spacing:.05em}
+  .pchip .pos{margin-left:auto;font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.05em}
 
   .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
   .cat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px}
@@ -114,8 +118,8 @@
   .sbtn:active{transform:translateY(0)}
   .sbtn.good{border-color:rgba(62,207,142,.4);color:#7de5b8}
   .sbtn.bad{border-color:rgba(255,107,107,.35);color:#ff9b9b}
-  .sbtn .kb{display:block;font-size:9px;color:var(--dim);font-weight:700;margin-top:3px;letter-spacing:.06em}
-  .sbtn .ct{position:absolute;top:4px;right:6px;font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .sbtn .kb{display:block;font-size:10px;color:var(--dim);font-weight:700;margin-top:3px;letter-spacing:.06em}
+  .sbtn .ct{position:absolute;top:4px;right:6px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
   .live{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
   .live span{background:var(--panel2);border:1px solid var(--line);border-radius:7px;
     padding:5px 10px;font-size:11px;color:var(--dim);font-weight:700;
@@ -130,6 +134,8 @@
   .log{display:flex;flex-direction:column;gap:4px;max-height:190px;overflow:auto}
   .log .ev{display:flex;gap:9px;align-items:center;padding:5px 9px;background:var(--panel2);
     border-radius:6px;font-size:12px;border:1px solid transparent}
+  .log .ev{width:100%;text-align:left;min-height:36px}
+  .log .ev:hover{border-color:var(--line)}
   .log .ev .s{font-weight:700}
   .log .ev .t{color:var(--dim);margin-left:auto;font-variant-numeric:tabular-nums;font-size:11px}
 
@@ -137,7 +143,7 @@
   .tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px}
   table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
   th,td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
-  th{background:var(--panel2);color:var(--dim);font-size:10.5px;text-transform:uppercase;
+  th{background:var(--panel2);color:var(--dim);font-size:11px;text-transform:uppercase;
     letter-spacing:.06em;font-weight:800;position:sticky;top:0;cursor:help}
   th:first-child,td:first-child{text-align:center;width:44px}
   th:nth-child(2),td:nth-child(2){text-align:left}
@@ -151,7 +157,7 @@
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:13px}
   .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px}
-  .kpi .l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:800}
+  .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:800}
   .kpi .v{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-top:3px;font-variant-numeric:tabular-nums}
 
   .list{display:flex;flex-direction:column;gap:7px}
@@ -160,7 +166,7 @@
   .item .ttl{font-weight:700;font-size:13.5px}
   .item .sub{font-size:11.5px;color:var(--dim)}
   .item.on{border-color:var(--accent)}
-  .badge{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  .badge{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
     padding:2px 7px;border-radius:20px;background:rgba(77,163,255,.16);color:var(--accent)}
 
   /* ============ court / attack placement ============ */
@@ -172,38 +178,96 @@
   .place summary::after{content:'▾';margin-left:auto;font-size:11px}
   .place[open] summary::after{content:'▴'}
   .place[open] summary{margin-bottom:7px}
-  .prow{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-  .opt{font-size:9px;font-weight:700;color:var(--dim);text-transform:none;letter-spacing:0;
-    border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:5px}
-  .fine{font-size:10px;color:var(--dim);font-weight:700;text-transform:none;letter-spacing:0}
+  .fine{font-size:11px;color:var(--dim);font-weight:700;text-transform:none;letter-spacing:0}
   .shotsel{display:flex;gap:3px;background:var(--panel);padding:3px;border-radius:8px}
   .shotsel button{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;color:var(--muted);min-height:34px}
   .shotsel button.on{background:var(--accent);color:#06121f}
 
   .court{background:#0d1116;border:1px solid var(--line);border-radius:9px;padding:8px}
-  .court .net{text-align:center;font-size:8.5px;letter-spacing:.2em;color:var(--dim);font-weight:800;
+  .court .net{text-align:center;font-size:11px;letter-spacing:.2em;color:var(--dim);font-weight:800;
     border-bottom:2px solid var(--accent);padding-bottom:4px;margin-bottom:7px}
   .zones{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
   .zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
     min-height:52px;border-radius:7px;border:1px solid var(--line);padding:5px 3px;
     transition:background .12s}
-  button.zone:hover{border-color:#4a5666}
-  .zone.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   /* the zone number is the identifier, so it must stay legible on the darkest fill */
-  .zone .zn{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em}
+  .zone .zn{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.05em}
   .zone .zc{font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1.1;color:var(--fg)}
-  .zone .zd{font-size:9.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
-  /* the three attack outcomes, repeated right under the court so the
-     zone -> outcome sequence never needs a scroll */
-  .quickatt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
-  .quickatt .pbtn{min-height:50px;font-size:11.5px;border-radius:9px}
-  .quickatt .pbtn .ct{font-size:15px}
-  .cscale{display:flex;align-items:center;gap:3px;margin-top:7px;font-size:9px;color:var(--dim);font-weight:700}
+  .zone .zd{font-size:11px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .cscale{display:flex;align-items:center;gap:3px;margin-top:7px;font-size:11px;color:var(--dim);font-weight:700}
   .cscale i{width:17px;height:9px;border-radius:2px;border:1px solid var(--line);display:block}
-  .zchip{font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:20px;
+  .zchip{font-size:11px;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:20px;
     background:rgba(77,163,255,.16);color:var(--accent)}
 
-  .pgrid2{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:16px;align-items:start}
+  /* ============ shot chart ============
+     Hit = orange, tip = blue (validated CVD-safe pair on the court surface).
+     Colour is never the only cue: tips also end in a diamond, hits in a circle,
+     and outcome is carried by line style (solid kill / dashed not a kill). */
+  :root{--hit:#d95926; --tip:#3987e5}
+  .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:#0d1116;border:1px solid var(--line);
+    border-radius:9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .shots .floor{fill:#141a21}
+  .shots .ln{stroke:#3a4553;stroke-width:.5;fill:none}
+  .shots .bound{stroke:#93a1b1;stroke-width:.8;fill:none}
+  .shots .netl{stroke:var(--fg);stroke-width:1.4}
+  .shots .zl{fill:#66727f;font-size:5px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
+  .shots .sidel{fill:#66727f;font-size:3.4px;font-weight:800;letter-spacing:.3px;text-anchor:middle}
+  /* thin and slightly translucent: a full match is 60+ lines, and where they
+     pile up the overlap itself should read as "they go here a lot" */
+  .shots .mk{stroke-width:.75;stroke-linecap:round;fill:none;opacity:.8}
+  .shots .mk.miss{stroke-dasharray:2 1.6;stroke-width:.55;opacity:.5}
+  .shots .end{stroke:#0d1116;stroke-width:.6}
+  .shots .end.miss{fill:#0d1116;stroke-width:1}
+  .shots .from{cursor:pointer}
+  .shots .from rect{fill:#1e242c;stroke:#3a4553;stroke-width:.6}
+  .shots .from.on rect{fill:var(--accent);stroke:var(--accent)}
+  .shots .from text{fill:var(--muted);font-size:3.4px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
+  .shots .from.on text{fill:#06121f}
+  .shots .tapzone{cursor:crosshair}
+  /* court lines sit above the tap surface; let taps fall through them */
+  .shots .ln,.shots .bound,.shots .netl,.shots .sidel{pointer-events:none}
+  /* a filter group names itself, so a row of pills never has to be decoded */
+  .fgroup{display:flex;align-items:center;gap:6px}
+  .flabel{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);white-space:nowrap}
+  table.mini tr[data-placeplay]{cursor:pointer}
+  table.mini tr[data-placeplay]:hover{background:rgba(77,163,255,.08)}
+  table.mini tr.sel{background:rgba(77,163,255,.16);font-weight:800}
+  table.mini tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+  .slegend{display:flex;flex-wrap:wrap;gap:4px 13px;margin-top:7px;font-size:11px;color:var(--muted);font-weight:600;align-items:center}
+  .slegend svg{width:22px;height:10px;vertical-align:middle;margin-right:4px}
+
+  /* ============ placement popup ============ */
+  .modal{position:fixed;inset:0;z-index:90;background:rgba(5,7,10,.72);display:flex;
+    align-items:center;justify-content:center;padding:12px}
+  .modal[hidden]{display:none}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:440px;
+    max-height:100%;overflow:auto;padding:13px 14px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .sheet .hd{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .sheet .hd h2{margin:0;font-size:15px}
+  .sheet .hd .x{margin-left:auto;width:36px;height:36px;border-radius:8px;font-size:20px;color:var(--muted)}
+  .sheet .ctl{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .sheet .ft{display:flex;gap:8px;margin-top:10px}
+  .digrow{margin-bottom:8px}
+  .digrow .fine{display:block;margin-bottom:4px}
+  .digs{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+  .digs::-webkit-scrollbar{height:0}
+  .digs button{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 9px;border-radius:8px;
+    background:var(--panel2);border:1px solid var(--line);font-weight:800;font-size:13px;color:var(--muted)}
+  .digs button.on{background:var(--good);border-color:var(--good);color:#06121f}
+  .sheet .ft .btn{flex:1;min-height:44px}
+  @media(max-width:700px){
+    .modal{align-items:flex-end;padding:0}
+    .sheet{border-radius:16px 16px 0 0;padding-bottom:calc(13px + env(safe-area-inset-bottom))}
+    /* 44px minimum touch target, like every other control on the phone layout */
+    .sheet .shotsel button{min-height:44px;padding:6px 12px;font-size:13px}
+    .sheet .ctl{gap:7px}
+    .sheet .hd .x{width:44px;height:44px}
+  }
+
+  /* small numeric tables: no name column, so every count right-aligns */
+  table.mini{min-width:0}
+  table.mini th:nth-child(2),table.mini td:nth-child(2){text-align:right}
+  .pgrid2{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:16px;align-items:start}
   @media(max-width:700px){.pgrid2{grid-template-columns:1fr;gap:11px}}
   .psum p{margin:0 0 9px;font-size:13px;color:var(--muted)}
   .psum p b{color:var(--fg)}
@@ -228,6 +292,7 @@
   .pgrid.sm{grid-template-columns:repeat(4,1fr)}
   .pgrid.sm .pbtn{min-height:54px;font-size:11px}
   .pgrid.sm .pbtn .ct{font-size:15px}
+  .pbtn.cur{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:rgba(77,163,255,.14)}
   details.more{margin-top:9px}
   details.more summary{list-style:none;cursor:pointer;padding:10px;text-align:center;
     background:var(--panel2);border:1px solid var(--line);border-radius:11px;
@@ -279,7 +344,7 @@
     .pchip .no{min-width:0;width:auto;height:auto;background:transparent;font-size:18px;
       color:var(--fg);padding:0}
     .pchip.on .no{background:transparent;color:var(--accent)}
-    .pchip .pn{font-size:9px;max-width:58px;font-weight:600}
+    .pchip .pn{font-size:11px;max-width:64px;font-weight:600}
     .pchip .pos{display:none}
 
     /* the court must not push the primary stat pad below the fold */
@@ -289,14 +354,17 @@
     .court{padding:6px}
     .hint .wide{display:none}
     .cats{display:none}
+    .teamtabs.boxteams{display:flex}
+    .boxteams button{min-height:44px;font-size:13px}
+    .boxside.off{display:none}
     .phonepad{display:block}
     .undobar{display:block}
     .live{gap:6px;margin-bottom:10px}
-    .live span{flex:1;text-align:center;padding:6px 4px;font-size:9.5px}
+    .live span{flex:1;text-align:center;padding:6px 4px;font-size:11px;letter-spacing:.02em}
     .live b{display:block;margin:0 0 1px;font-size:17px}
     .kpis{grid-template-columns:repeat(4,1fr);gap:6px}
     .kpi{padding:8px 6px;border-radius:9px}
-    .kpi .l{font-size:8px;letter-spacing:.04em}
+    .kpi .l{font-size:11px;letter-spacing:.02em;line-height:1.15}
     .kpi .v{font-size:16px;margin-top:2px}
     h2{font-size:14px}
     .toast{bottom:calc(74px + env(safe-area-inset-bottom))}
@@ -308,6 +376,9 @@
     border:1px solid var(--line);padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;
     box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .18s;z-index:100}
   .toast.show{opacity:1}
+  .toast.act{display:flex;align-items:center;gap:14px;padding:5px 8px 5px 16px;white-space:nowrap}
+  .toast.act.show{pointer-events:auto}
+  .toast button{color:var(--accent);font-weight:800;font-size:14px;padding:0 10px;min-height:40px;min-width:44px}
   .hint{font-size:11.5px;color:var(--dim);margin-top:9px}
 </style>
 </head>
@@ -327,6 +398,8 @@
 
 <main id="app"></main>
 <div class="toast" id="toast"></div>
+<!-- lives outside #app so a re-render underneath never wipes it -->
+<div class="modal" id="placeModal" hidden><div class="sheet" id="placeSheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
 /* ============================================================
@@ -374,6 +447,38 @@ const ATTACK_STATS = new Set(['kill','attackErr','attack0']);
 const SHOTS        = [['hit','Hit'],['tip','Tip']];
 const SHOT_LABEL   = Object.fromEntries(SHOTS);
 
+/* Where the hitter took off — the start of each line on the shot chart.
+   Named by volleyball position rather than left/right: the power side is the
+   hitter's left, which lands on the right of the drawing because you look at
+   them across the net, and "left" there read backwards. Keys stay L/M/R/B. */
+const FROMS      = [['L','Power'],['M','Middle'],['R','Right side'],['B','Back row']];
+const FROM_LABEL = Object.fromEntries(FROMS);
+const FROM_BY_POS = {OH:'L', MB:'M', OPP:'R'};
+/* Set type for an attack from the middle. Optional, and only offered when the
+   take-off is Middle. Edit this list to match your team's play calls. */
+const MIDDLE_PLAYS = ['30','51','60'];
+
+/* Court geometry for the shot chart, in SVG units (10 per metre).
+   The landing half is 9 m x 9 m with the net along y=0 and the 3 m line at
+   y=30; the hitter's side is drawn above the net, cropped to 4.5 m. */
+const CM = 10, COURT = 9*CM, LINE3 = 3*CM, THEIRS = 4.5*CM;
+const FROM_XY = {L:[75,-11], M:[45,-11], R:[15,-11], B:[45,-38]};
+/* zone from a landing point: columns are 3 m wide, rows split at the 3 m line */
+function zoneAt(x, y){
+  const col = x < 30 ? 0 : x < 60 ? 1 : 2;
+  return (y < LINE3 ? [4,3,2] : [5,6,1])[col];
+}
+/* attacks recorded before exact spots existed only know their zone: put them
+   in that zone with a stable per-event scatter so they don't stack on one pixel */
+const ZONE_XY = {4:[15,15],3:[45,15],2:[75,15],5:[15,60],6:[45,60],1:[75,60]};
+function landing(ev){
+  if(ev.x != null) return [ev.x, ev.y];
+  if(!ev.zone) return null;
+  let h = 0; for(const ch of ev.id) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  const [cx, cy] = ZONE_XY[ev.zone];
+  return [cx + ((h % 17) - 8), cy + (((h >> 5) % 17) - 8)];
+}
+
 const CATS = [...new Set(STATS.map(s=>s.cat))];
 const STAT_BY_KB = Object.fromEntries(STATS.map(s=>[s.kb.toLowerCase(),s.key]));
 const STAT_LABEL = Object.fromEntries(STATS.map(s=>[s.key,s.label]));
@@ -396,6 +501,9 @@ const uid = () => Math.random().toString(36).slice(2,10);
 const team    = id => S.teams.find(t=>t.id===id);
 const match   = id => S.matches.find(m=>m.id===id);
 const current = () => match(S.activeMatch);
+/* The Box Score can show any match without changing which one the Match tab
+   records into; it falls back to the active match. */
+const boxMatch = () => match(S.ui.boxMatch) ?? current();
 function player(pid){
   for(const t of S.teams){ const p=t.players.find(p=>p.id===pid); if(p) return p; }
   return null;
@@ -439,13 +547,14 @@ const errors     = r => r.attackErr + r.serveErr + r.recErr + r.setErr + r.block
 /* Attacks broken out by landing zone. Returns per-zone tallies plus the
    attacks that were recorded without a location, which must stay visible —
    otherwise the court silently under-reports and looks authoritative. */
-function placement(m, teamId, {playerId=null, shot=null, set=null}={}){
+function placement(m, teamId, {playerId=null, shot=null, set=null, play=null}={}){
   const grid = {}, unplaced = {att:0, kill:0, err:0};
   for(const ev of m.events){
     if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat)) continue;
     if(set && ev.set !== set) continue;
     if(playerId && (ev.playerId ?? 'TEAM') !== playerId) continue;
     if(shot && (ev.shot || 'hit') !== shot) continue;
+    if(play && ev.play !== play) continue;
     const c = ev.zone ? (grid[ev.zone] ??= {att:0, kill:0, err:0}) : unplaced;
     c.att++;
     if(ev.stat === 'kill') c.kill++;
@@ -474,10 +583,9 @@ const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','
 /* Court diagram. Shading is a SEQUENTIAL single-hue ramp on attack volume
    (light -> dark, never a rainbow); every cell also prints its count, so the
    colour is redundant encoding and the chart still reads in greyscale. */
-function courtHtml(cells, {arm=null, clickable=false, detail=false}={}){
+function courtHtml(cells, {detail=false}={}){
   const counts = ZONE_ORDER.map(z => cells[z]?.att ?? 0);
   const max = Math.max(1, ...counts);
-  const tag = clickable ? 'button' : 'div';
   return `<div class="court">
     <div class="net">NET</div>
     <div class="zones">
@@ -489,12 +597,11 @@ function courtHtml(cells, {arm=null, clickable=false, detail=false}={}){
           ? `Zone ${z} — ${c.att} attack${c.att===1?'':'s'}, ${c.kill} kill${c.kill===1?'':'s'}, `
             + `${c.err} error${c.err===1?'':'s'}, hitting ${pct3(hp)}`
           : `Zone ${z} — no attacks`;
-        return `<${tag} class="zone ${arm===z?'on':''}" ${clickable?`data-zone="${z}"`:''}
-            style="background:rgba(77,163,255,${a.toFixed(3)})" title="${esc(tip)}">
+        return `<div class="zone" style="background:rgba(77,163,255,${a.toFixed(3)})" title="${esc(tip)}">
           <span class="zn">${z}</span>
           <span class="zc num">${c?.att ?? 0}</span>
           ${detail && c?.att ? `<span class="zd num">${c.kill}K · ${pct3(hp)}</span>` : ''}
-        </${tag}>`;
+        </div>`;
       }).join('')}
     </div>
   </div>`;
@@ -511,12 +618,102 @@ function courtScale(max){
     <span>${max} attack${max===1?'':'s'}</span></div>`;
 }
 
+/* Shot chart: one line per located attack, from the hitter's take-off spot
+   to where it landed. Colour = shot (hit / tip), line style = outcome.
+   With `pick`, it is the input surface for the placement popup instead. */
+function shotSvg(events, {pick=null}={}){
+  const zl = ZONE_ORDER.map(z => {
+    const [x, y] = ZONE_XY[z];
+    return `<text class="zl" x="${x}" y="${y}">${z}</text>`;
+  }).join('');
+
+  const fromMarks = FROMS.map(([k, l]) => {
+    const [x, y] = FROM_XY[k];
+    return pick
+      ? `<g class="from ${pick.from===k?'on':''}" data-from="${k}">
+           <rect x="${x-12.5}" y="${y-5.5}" width="25" height="11" rx="5.5"/><text x="${x}" y="${y}">${l}</text></g>`
+      : `<text class="sidel" x="${x}" y="${y-4}">${l.toUpperCase()}</text>`;
+  }).join('');
+
+  // misses first so kills draw on top of them
+  const sorted = [...events].sort((a,b) => (a.stat==='kill') - (b.stat==='kill'));
+  const marks = sorted.map(ev => {
+    const pt = landing(ev); if(!pt) return '';
+    const [x, y] = pt, from = FROM_XY[ev.from];
+    const tip = ev.shot === 'tip', kill = ev.stat === 'kill';
+    const col = tip ? 'var(--tip)' : 'var(--hit)';
+    const miss = kill ? '' : 'miss';
+    const p = ev.playerId ? player(ev.playerId) : null;
+    const title = [p ? pFull(p) : 'Team', STAT_LABEL[ev.stat], tip ? 'tip' : 'hit',
+                   ev.from ? 'from ' + FROM_LABEL[ev.from].toLowerCase() : null, ev.play,
+                   'zone ' + zoneAt(x, y), 'set ' + ev.set].filter(Boolean).join(' · ');
+    // inline style: the .end CSS would otherwise beat SVG presentation attributes
+    const paint = kill ? `fill:${col}` : `stroke:${col}`;
+    const end = tip
+      ? `<path class="end ${miss}" d="M${x} ${y-2.6}L${x+2.6} ${y}L${x} ${y+2.6}L${x-2.6} ${y}Z" style="${paint}"/>`
+      : `<circle class="end ${miss}" cx="${x}" cy="${y}" r="2.1" style="${paint}"/>`;
+    return `<g><title>${esc(title)}</title>
+      ${from ? `<line class="mk ${miss}" x1="${from[0]}" y1="${from[1]}" x2="${x}" y2="${y}" stroke="${col}"/>` : ''}
+      ${end}</g>`;
+  }).join('');
+
+  return `<svg class="shots" viewBox="-5 ${-THEIRS-2} ${COURT+10} ${COURT+THEIRS+7}" role="img"
+      aria-label="Shot chart">
+    <rect class="floor" x="0" y="${-THEIRS}" width="${COURT}" height="${THEIRS}"/>
+    <line class="ln" x1="0" y1="${-LINE3}" x2="${COURT}" y2="${-LINE3}"/>
+    <rect class="floor ${pick?'tapzone':''}" x="0" y="0" width="${COURT}" height="${COURT}" ${pick?'data-land':''}/>
+    <line class="ln" x1="30" y1="0" x2="30" y2="${COURT}"/>
+    <line class="ln" x1="60" y1="0" x2="60" y2="${COURT}"/>
+    <line class="bound" x1="0" y1="${LINE3}" x2="${COURT}" y2="${LINE3}"/>
+    <rect class="bound" x="0" y="0" width="${COURT}" height="${COURT}"/>
+    <g pointer-events="none">${zl}</g>
+    <line class="netl" x1="-3" y1="0" x2="${COURT+3}" y2="0"/>
+    ${fromMarks}
+    <g ${pick?'pointer-events="none"':''}>${marks}</g>
+  </svg>`;
+}
+
+/* legend: names both encodings, so identity never rests on colour alone */
+function shotLegend(){
+  const sw = (col, dash, shape) => `<svg viewBox="0 0 22 10">
+    <line x1="1" y1="5" x2="15" y2="5" stroke="${col}" stroke-width="2" ${dash?'stroke-dasharray="3 2"':''}/>
+    ${shape==='d' ? `<path d="M18 1.5L21.5 5L18 8.5L14.5 5Z" fill="${col}"/>` : `<circle cx="18" cy="5" r="3" fill="${col}"/>`}</svg>`;
+  return `<div class="slegend">
+    <span>${sw('var(--hit)', false, 'c')}Hit</span>
+    <span>${sw('var(--tip)', false, 'd')}Tip</span>
+    <span>${sw('var(--muted)', false, 'c')}Solid = kill</span>
+    <span>${sw('var(--muted)', true, 'c')}Dashed = not a kill</span>
+  </div>`;
+}
+
+/* the located attacks a shot chart draws, under the usual placement filters */
+function shotEvents(m, teamId, {playerId=null, shot=null, set=null, play=null, killsOnly=false}={}){
+  return m.events.filter(ev =>
+    ev.teamId === teamId && ATTACK_STATS.has(ev.stat) && landing(ev)
+    && (!set || ev.set === set)
+    && (!playerId || (ev.playerId ?? 'TEAM') === playerId)
+    && (!shot || (ev.shot || 'hit') === shot)
+    && (!play || ev.play === play)
+    && (!killsOnly || ev.stat === 'kill'));
+}
+
+/* With `undoIds`, the toast carries an Undo for exactly those events — not
+   "the last event", which may already be a later tap — and stays up longer. */
 let toastTimer;
-function toast(msg){
+function toast(msg, undoIds=null){
   const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
+  el.innerHTML = `<span>${esc(msg)}</span>` + (undoIds ? `<button data-toastundo>Undo</button>` : '');
+  el.classList.toggle('act', !!undoIds);
+  el.classList.add('show');
+  const b = el.querySelector('[data-toastundo]');
+  if(b) b.onclick = () => {
+    const m = current(); if(!m) return;
+    const ids = new Set(undoIds);
+    m.events = m.events.filter(ev => !ids.has(ev.id));
+    save(); render(); toast('Undone');
+  };
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('show'), 1500);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), undoIds ? 4000 : 1500);
 }
 
 /* ============================================================
@@ -580,41 +777,22 @@ function vMatch(){
     <button class="${ui.set===i+1?'on':''}" data-set="${i+1}">${i+1}</button>`).join('')
     + `<button data-newset title="Start a new set">+</button>`;
 
-  ui.shot ??= 'hit';
-  /* Default open where there's room, closed on a phone — the court plus the
+  /* Default open where there's room, closed on a phone — the chart plus the
      full stat pad don't both fit above the fold at 844px. Once the user
      toggles it, their choice wins on both. */
   const roomy = typeof matchMedia === 'function' ? matchMedia('(min-width:701px)').matches : true;
   const courtOpen = S.ui.court ?? roomy;
-  const zoneCells = sel ? placement(m, teamId, {playerId: sel}).grid : {};
+  const teamShots = shotEvents(m, teamId);
   const courtBlock = `
     <details class="place" ${courtOpen ? 'open' : ''}>
       <summary>
-        <span>Attack placement <span class="opt">optional</span></span>
-        ${ui.zone ? `<span class="zchip">zone ${ui.zone} armed</span>` : ''}
+        <span>Shot chart — ${esc(t.name)}</span>
+        <span class="zchip">${teamShots.length}</span>
       </summary>
-      <div class="prow">
-        <div class="shotsel">
-          ${SHOTS.map(([k,l])=>`<button class="${ui.shot===k?'on':''}" data-shot="${k}">${l}</button>`).join('')}
-        </div>
-        <div class="spacer"></div>
-        <span class="fine">this player, this match</span>
-      </div>
-      ${courtHtml(zoneCells, {arm: ui.zone ?? null, clickable: true})}
-      <div class="quickatt">
-        ${['kill','attackErr','attack0'].map(k => {
-          const s = STATS.find(x => x.key === k);
-          return `<button class="pbtn ${s.tone}" data-stat="${k}">
-            <span class="ct ${counts[k]?'':'z'} num">${counts[k]}</span>${s.short}
-          </button>`;
-        }).join('')}
-      </div>
+      ${shotSvg(teamShots)}
+      ${shotLegend()}
       <div class="hint" style="margin-top:6px">
-        ${ui.zone
-          ? `Zone <b style="color:var(--accent)">${ui.zone}</b> armed — next attack lands there as a
-             <b>${SHOT_LABEL[ui.shot].toLowerCase()}</b>, then clears.`
-          : `Tap a zone, then an outcome above.<span class="wide"> Skip the zone and the attack still
-             counts, just without a location.</span>`}
+        Whole team, this match. Tap Kill / Att Error / In Play and you'll be asked where it landed.
       </div>
     </details>`;
 
@@ -639,14 +817,15 @@ function vMatch(){
   const recent = m.events.slice(-10).reverse().map(ev=>{
     const p = ev.playerId ? player(ev.playerId) : null;
     const st = STATS.find(s=>s.key===ev.stat);
-    return `<div class="ev">
+    return `<button class="ev" data-edit="${ev.id}" title="Edit or delete">
       <span class="badge">${esc(teamName(ev.teamId).slice(0,14))}</span>
       <span>${p ? esc(pFull(p)) : 'Team'}</span>
       <span class="s ${st.tone==='good'?'pos':st.tone==='bad'?'neg':''}">${st.label}</span>
+      ${ev.from ? `<span class="zchip">${FROM_LABEL[ev.from].toLowerCase()}${ev.play ? ' ' + ev.play : ''}</span>` : ''}
       ${ev.zone ? `<span class="zchip">Z${ev.zone}</span>` : ''}
       ${ev.shot === 'tip' ? `<span class="zchip">tip</span>` : ''}
-      <span class="t">S${ev.set}</span>
-    </div>`;
+      <span class="t">S${ev.set} ›</span>
+    </button>`;
   }).join('') || `<div class="empty">No events yet — pick a player, then tap a stat.</div>`;
 
   return `
@@ -719,7 +898,7 @@ function vMatch(){
           : `<div class="nosel">Select a player on the left to start recording.</div>`}
       </div>
       <div class="panel" style="margin:0">
-        <h3>Recent</h3>
+        <h3>Recent <span class="fine" style="text-transform:none;letter-spacing:0">· tap one to fix it</span></h3>
         <div class="log">${recent}</div>
       </div>
     </div>
@@ -753,18 +932,28 @@ const COLS = [
 ];
 
 function vBox(){
-  const m = current();
+  const m = boxMatch();
   if(!m) return `<div class="panel"><div class="empty">No match selected.
     <br><br><button class="btn primary" data-go="matches">Go to Matches</button></div></div>`;
 
   S.ui.boxSet ??= 0; // 0 = all sets
+  if(S.ui.boxSet > m.sets.length) S.ui.boxSet = 0;   // a set this match doesn't have
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
 
   const pills = [0, ...m.sets.map((_,i)=>i+1)].map(n=>`
     <button class="${S.ui.boxSet===n?'on':''}" data-boxset="${n}">${n===0?'All':'Set '+n}</button>`).join('');
 
+  const label = x => `${x.date} · ${teamName(x.teamA)} vs ${teamName(x.teamB)}${x.id===S.activeMatch ? ' (recording)' : ''}`;
+  const picker = S.matches.length > 1
+    ? `<select data-boxmatch aria-label="Match" style="max-width:100%">
+        ${[...S.matches].reverse().map(x =>
+          `<option value="${x.id}" ${x.id===m.id?'selected':''}>${esc(label(x))}</option>`).join('')}
+      </select>`
+    : '';
+
   return `
   <div class="panel">
+    ${picker ? `<div class="row" style="margin-bottom:11px"><span class="flabel">Match</span>${picker}</div>` : ''}
     <div class="row">
       <h2 style="margin:0">${esc(teamName(m.teamA))} vs ${esc(teamName(m.teamB))}</h2>
       <span class="badge">${esc(m.date)}</span>
@@ -772,11 +961,13 @@ function vBox(){
       <div class="setpills" style="margin:0">${pills}</div>
       <button class="btn sm" data-csv>Export CSV</button>
     </div>
+    <div class="teamtabs boxteams">
+      <button class="${S.ui.boxTeam==='b'?'':'on'}" data-boxteam="a">${esc(teamName(m.teamA))}</button>
+      <button class="${S.ui.boxTeam==='b'?'on':''}" data-boxteam="b">${esc(teamName(m.teamB))}</button>
+    </div>
   </div>
-  ${teamBox(m, m.teamA, f)}
-  ${placePanel(m, m.teamA, f)}
-  ${teamBox(m, m.teamB, f)}
-  ${placePanel(m, m.teamB, f)}`;
+  <div class="boxside ${S.ui.boxTeam==='b'?'off':''}">${teamBox(m, m.teamA, f)}${placePanel(m, m.teamA, f)}</div>
+  <div class="boxside ${S.ui.boxTeam==='b'?'':'off'}">${teamBox(m, m.teamB, f)}${placePanel(m, m.teamB, f)}</div>`;
 }
 
 /* Where a team's attacks went. Sequential shading by volume; counts printed
@@ -785,10 +976,15 @@ function placePanel(m, teamId, f){
   const t = team(teamId);
   const who  = S.ui['place_'+teamId] ?? '';
   const shot = S.ui.placeShot ?? '';
-  const {grid, unplaced} = placement(m, teamId, {...f, playerId: who||null, shot: shot||null});
+  /* set-type filter: offered once this team has a typed middle attack, and kept
+     visible while active so an empty result can always be switched back */
+  const play = S.ui.placePlay ?? '';
+  const typed = m.events.some(ev => ev.teamId === teamId && ev.play);
+  const filt = {...f, playerId: who||null, shot: shot||null, play: play||null};
+  const {grid, unplaced} = placement(m, teamId, filt);
 
   const located = Object.values(grid).reduce((n,c)=>n+c.att, 0);
-  if(!located && !unplaced.att) return '';   // nothing to show yet
+  if(!located && !unplaced.att && !play) return '';   // nothing to show yet
 
   const max = Math.max(0, ...ZONE_ORDER.map(z=>grid[z]?.att ?? 0));
   const best = ZONE_ORDER
@@ -797,6 +993,10 @@ function placePanel(m, teamId, f){
   const label = who
     ? (who==='TEAM' ? 'Team / unassigned' : pFull(player(who)))
     : 'All players';
+  const killsOnly = !!S.ui.placeKills;
+  const shots = shotEvents(m, teamId, {...filt, killsOnly});
+  const noLine = shots.filter(ev => !ev.from).length;
+  const mid = middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null}, play);
 
   return `
   <div class="panel">
@@ -808,19 +1008,42 @@ function placePanel(m, teamId, f){
         ${t.players.map(p=>`<option value="${p.id}" ${who===p.id?'selected':''}>${esc(pFull(p))}</option>`).join('')}
         <option value="TEAM" ${who==='TEAM'?'selected':''}>Team / unassigned</option>
       </select>
-      <div class="setpills" style="margin:0;grid-column:auto">
-        ${[['','All'],...SHOTS].map(([k,l])=>`
-          <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
+      <div class="fgroup"><span class="flabel">Shot</span>
+        <div class="setpills" style="margin:0;grid-column:auto">
+          ${[['','All'],...SHOTS].map(([k,l])=>`
+            <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
+        </div>
       </div>
+      ${typed || play ? `<div class="fgroup"><span class="flabel">Middle set</span>
+        <div class="setpills" style="margin:0;grid-column:auto">
+          ${['', ...MIDDLE_PLAYS].map(k => `
+            <button class="${play===k?'on':''}" data-placeplay="${k}">${k || 'All'}</button>`).join('')}
+        </div>
+      </div>` : ''}
       <button class="btn sm" data-placecsv>Export CSV</button>
     </div>
     <div class="pgrid2">
       <div>
-        ${courtHtml(grid, {detail:true})}
-        ${courtScale(max)}
+        <div class="row" style="margin-bottom:7px">
+          <h3 style="margin:0">Shot chart${play ? ` <span class="zchip" style="text-transform:none">middle set ${play}</span>` : ''}</h3>
+          <div class="spacer"></div>
+          <div class="setpills" style="margin:0;grid-column:auto">
+            <button class="${killsOnly?'':'on'}" data-placekills="0">All attacks</button>
+            <button class="${killsOnly?'on':''}" data-placekills="1">Kills only</button>
+          </div>
+        </div>
+        ${shotSvg(shots)}
+        ${shotLegend()}
+        ${noLine ? `<p class="fine" style="margin:6px 0 0">${noLine} shot${noLine===1?'':'s'} with no
+          hitting position recorded — drawn as a landing mark only.</p>` : ''}
       </div>
       <div class="psum">
-        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
+        <h3>By zone</h3>
+        <div style="max-width:300px;margin-bottom:10px">
+          ${courtHtml(grid, {detail:true})}
+          ${courtScale(max)}
+        </div>
+        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · middle set ${play} only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
         ${located
           ? `<p>${located} located attack${located===1?'':'s'}.
                Most often <b>zone ${best.z}</b> — ${best.att} time${best.att===1?'':'s'},
@@ -830,11 +1053,45 @@ function placePanel(m, teamId, f){
           ? `<p class="warn">${unplaced.att} attack${unplaced.att===1?'':'s'} recorded without a
                location — not shown on the court.</p>`
           : ''}
+        ${mid}
         <p class="fine">Zones are the positions of the team being attacked, net at top:
-          4-3-2 front row, 5-6-1 back row. Each cell shows attacks, then kills and hitting %.</p>
+          4-3-2 front row (inside the 3 m line), 5-6-1 back row. Each cell shows attacks, then kills
+          and hitting %. The shot chart draws each located attack from where the hitter took off —
+          their left side appears on the right, as seen across the net. "Kills only" applies to the
+          shot chart, not the zone counts.</p>
       </div>
     </div>
   </div>`;
+}
+
+/* Middle attacks by middle set (30 / 51 / 60). Counts every middle attack
+   under the panel's filters, located or not, so an untyped or skipped swing is
+   never dropped. Ignores the middle-set filter on purpose — it's the comparison
+   across types — and highlights the selected row instead. Rows are the filter:
+   tap one to show only that set, tap it again to clear. "Middle set" is always
+   spelled out because "set" alone reads as Set 1 / Set 2 of the match. */
+function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}, active=''){
+  const rows = {};
+  for(const ev of m.events){
+    if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat) || ev.from !== 'M') continue;
+    if(set && ev.set !== set) continue;
+    if(playerId && (ev.playerId ?? 'TEAM') !== playerId) continue;
+    if(shot && (ev.shot || 'hit') !== shot) continue;
+    const c = rows[ev.play || ''] ??= {att:0, kill:0, err:0};
+    c.att++;
+    if(ev.stat === 'kill') c.kill++;
+    else if(ev.stat === 'attackErr') c.err++;
+  }
+  if(!MIDDLE_PLAYS.some(k => rows[k])) return '';   // nobody has tagged a type yet
+  const line = (k, label) => rows[k] ? `<tr ${k ? `data-placeplay="${k===active ? '' : k}" title="${k===active ? 'Show all middle sets' : 'Show only middle set ' + k}"` : ''}
+      class="${active && k===active ? 'sel' : ''}"><td>${label}</td><td class="num">${rows[k].att}</td>
+    <td class="num">${rows[k].kill}</td><td class="num">${rows[k].err}</td>
+    <td class="num ${zoneHit(rows[k])>=0?'pos':'neg'}">${pct3(zoneHit(rows[k]))}</td></tr>` : '';
+  return `<h3 style="margin-top:12px">Middle sets <span class="fine" style="text-transform:none;letter-spacing:0">· tap a row to filter</span></h3>
+    <div class="tw" style="max-width:300px;margin-bottom:10px"><table class="mini">
+      <thead><tr><th style="width:auto">Middle set</th><th>Att</th><th>K</th><th>E</th><th>Hit%</th></tr></thead>
+      <tbody>${MIDDLE_PLAYS.map(k => line(k, k)).join('')}${line('', '<span style="color:var(--dim)">no type</span>')}</tbody>
+    </table></div>`;
 }
 
 function teamBox(m, teamId, f){
@@ -851,7 +1108,7 @@ function teamBox(m, teamId, f){
   const body = rows.map(({p,r})=>`
     <tr>
       <td class="num">${esc(jersey(p))}</td>
-      <td>${p.id==='TEAM' ? esc(p.name) : pDash(p)}${p.pos?` <span style="color:var(--dim);font-size:10px">${esc(p.pos)}</span>`:''}</td>
+      <td>${p.id==='TEAM' ? esc(p.name) : pDash(p)}${p.pos?` <span style="color:var(--dim);font-size:11px">${esc(p.pos)}</span>`:''}</td>
       ${COLS.map(c=>`<td class="num ${c[3]||''} ${cellTone(c,r)}">${c[2](r)}</td>`).join('')}
     </tr>`).join('');
 
@@ -949,7 +1206,8 @@ function vMatches(){
       </div>
       <div class="spacer"></div>
       ${m.id===S.activeMatch ? `<span class="badge">Active</span>` : ''}
-      <button class="btn sm" data-open="${m.id}">Open</button>
+      <button class="btn sm" data-boxof="${m.id}" title="See this match's box score and placement">Box Score</button>
+      <button class="btn sm" data-open="${m.id}" title="Record into this match">Open</button>
       <button class="btn sm danger" data-delmatch="${m.id}">Delete</button>
     </div>`;
   }).join('');
@@ -999,27 +1257,23 @@ function wire(){
   on('[data-go]','click', e => go(e.currentTarget.dataset.go));
 
   /* --- match view --- */
-  on('[data-side]','click', e => { S.ui.side = e.currentTarget.dataset.side; S.ui.zone = null; save(); render(); });
+  on('[data-side]','click', e => { S.ui.side = e.currentTarget.dataset.side; save(); render(); });
   on('[data-set]','click',  e => { S.ui.set = +e.currentTarget.dataset.set; save(); render(); });
   on('[data-sel]','click',  e => {
     const m = current(), tid = S.ui.side==='a' ? m.teamA : m.teamB;
     S.ui['sel_'+tid] = e.currentTarget.dataset.sel;
-    S.ui.zone = null;                       // never carry an armed zone to another player
     save(); render();
   });
-  on('[data-zone]','click', e => {
-    const z = +e.currentTarget.dataset.zone;
-    S.ui.zone = S.ui.zone === z ? null : z; // tapping the armed zone disarms it
-    save(); render();
-  });
-  on('[data-shot]','click', e => { S.ui.shot = e.currentTarget.dataset.shot; save(); render(); });
   on('[data-placeplayer]','change', e => {
     S.ui['place_'+e.target.dataset.placeplayer] = e.target.value; save(); render();
   });
   on('[data-placeshot]','click', e => { S.ui.placeShot = e.currentTarget.dataset.placeshot; save(); render(); });
+  on('[data-placeplay]','click', e => { S.ui.placePlay = e.currentTarget.dataset.placeplay; save(); render(); });
+  on('[data-placekills]','click', e => { S.ui.placeKills = e.currentTarget.dataset.placekills === '1'; save(); render(); });
   on('[data-placecsv]','click', exportPlacementCsv);
-  on('[data-stat]','click', e => addStat(e.currentTarget.dataset.stat));
+  on('[data-stat]','click', e => requestStat(e.currentTarget.dataset.stat));
   on('[data-undo]','click', undo);
+  on('[data-edit]','click', e => openEdit(e.currentTarget.dataset.edit));
   // <details> resets on every re-render, so its open state has to be persisted
   on('details.more','toggle', e => { S.ui.more = e.target.open; save(); });
   on('details.place','toggle', e => { S.ui.court = e.target.open; save(); });
@@ -1035,8 +1289,12 @@ function wire(){
   });
 
   /* --- box score --- */
+  on('[data-boxmatch]','change', e => {
+    S.ui.boxMatch = e.target.value; S.ui.boxSet = 0; save(); render();
+  });
   on('[data-boxset]','click', e => { S.ui.boxSet = +e.currentTarget.dataset.boxset; save(); render(); });
   on('[data-csv]','click', exportCsv);
+  on('[data-boxteam]','click', e => { S.ui.boxTeam = e.currentTarget.dataset.boxteam; save(); render(); });
 
   /* --- teams --- */
   on('[data-addteam]','click', () => {
@@ -1077,6 +1335,9 @@ function wire(){
                sets:[{a:0,b:0}], events:[]};
     S.matches.push(m); S.activeMatch = m.id; S.ui = {set:1, side:'a'};
     save(); go('match'); toast('Match created');
+  });
+  on('[data-boxof]','click', e => {
+    S.ui.boxMatch = e.currentTarget.dataset.boxof; S.ui.boxSet = 0; save(); go('box');
   });
   on('[data-open]','click', e => {
     S.activeMatch = e.currentTarget.dataset.open;
@@ -1135,24 +1396,199 @@ function addPlayer(tid){
   if(rows.length > 1) toast(rows.length + ' players added');
 }
 
-function addStat(stat){
-  const m = current(); if(!m) return;
+function selection(){
+  const m = current(); if(!m) return null;
   const teamId = S.ui.side==='a' ? m.teamA : m.teamB;
-  const sel = S.ui['sel_'+teamId];
+  return {m, teamId, sel: S.ui['sel_'+teamId]};
+}
+
+/* Every button and shortcut comes through here: attacks open the placement
+   popup, everything else records straight away. */
+function requestStat(stat){
+  const s = selection(); if(!s) return;
+  if(!s.sel) return toast('Select a player first');
+  if(ATTACK_STATS.has(stat)) openPlace(stat, s.sel);
+  else addStat(stat);
+}
+
+/* loc = {shot, from, play, x, y, dig} from the popup; x/y absent when skipped.
+   dig = the defender who dug a kept-in-play attack — logged as their own Dig. */
+function addStat(stat, loc=null){
+  const s = selection(); if(!s) return;
+  const {m, teamId, sel} = s;
   if(!sel) return toast('Select a player first');
 
   const ev = {id:uid(), set:S.ui.set, teamId,
               playerId: sel==='TEAM' ? null : sel, stat};
   let note = '';
   if(ATTACK_STATS.has(stat)){
-    ev.shot = S.ui.shot || 'hit';
-    if(S.ui.zone){ ev.zone = S.ui.zone; note = ` → zone ${ev.zone}`; }
-    note += ` (${SHOT_LABEL[ev.shot].toLowerCase()})`;
+    ev.shot = loc?.shot || 'hit';
+    if(loc?.from) ev.from = loc.from;
+    if(loc?.play && ev.from === 'M') ev.play = loc.play;
+    if(loc?.x != null){
+      ev.x = loc.x; ev.y = loc.y; ev.zone = zoneAt(loc.x, loc.y);
+      note = ` → zone ${ev.zone}`;
+    }
+    note += ` (${ev.play ? ev.play + ' ' : ''}${SHOT_LABEL[ev.shot].toLowerCase()})`;
   }
   m.events.push(ev);
-  S.ui.zone = null;              // a zone arms one attack, then clears
+  const ids = [ev.id];
+  if(loc?.dig && stat === 'attack0'){
+    const other = teamId === m.teamA ? m.teamB : m.teamA;
+    const d = {id:uid(), set:S.ui.set, teamId: other,
+               playerId: loc.dig === 'TEAM' ? null : loc.dig, stat:'dig'};
+    m.events.push(d); ids.push(d.id);
+    const dp = d.playerId ? player(d.playerId) : null;
+    note += ` · dug by ${dp ? pFull(dp) : 'team'}`;
+  }
   save(); render();
-  toast(STAT_LABEL[stat] + note);
+  toast(STAT_LABEL[stat] + note, ids);
+}
+
+/* ---------- placement popup ----------
+   Opens on every attack. The hitter's take-off spot is remembered per player
+   (an outside hitter keeps swinging from the left), so the usual case is one
+   tap on the landing spot. Skip still records the attack, just unlocated. */
+let pop = null;   // {stat, sel, shot, from, play, dig} while the popup is open
+const modal = document.getElementById('placeModal');
+const sheet = document.getElementById('placeSheet');
+
+function openPlace(stat, sel){
+  const p = sel === 'TEAM' ? null : player(sel);
+  pop = {stat, sel, shot:'hit', play:null, dig:null,
+         from: S.ui['from_'+sel] ?? FROM_BY_POS[p?.pos] ?? null};
+  renderPop();
+  modal.hidden = false;
+}
+function closePlace(){ pop = null; modal.hidden = true; }
+/* a set type only means something from the middle, so leaving it drops the type */
+function setFrom(f){ pop.from = f; if(f !== 'M') pop.play = null; }
+
+/* "Dug by": an attack kept in play was usually dug, by the OTHER team. Logging
+   it here saves switching team tabs and picking the digger mid-rally. Pick it
+   before tapping the landing spot, which records and closes. */
+function digRow(){
+  const m = current();
+  const other = team(selection().teamId === m.teamA ? m.teamB : m.teamA);
+  const chip = (id, label) => `<button class="${pop.dig===id?'on':''}" data-pdig="${id}">${label}</button>`;
+  return `<div class="digrow">
+    <span class="fine">Dug by <span style="font-weight:600">(optional)</span></span>
+    <div class="digs">
+      ${other.players.map(p => chip(p.id, esc(jersey(p) ? '#'+jersey(p) : pFull(p)))).join('')}
+      ${chip('TEAM', 'Team')}
+    </div>
+  </div>`;
+}
+
+function renderPop(){
+  const p = pop.sel === 'TEAM' ? null : player(pop.sel);
+  const st = STATS.find(s => s.key === pop.stat);
+  sheet.innerHTML = `
+    <div class="hd">
+      <h2><span class="${st.tone==='good'?'pos':st.tone==='bad'?'neg':''}">${st.label}</span>
+        — ${p ? esc(pFull(p)) : 'Team'}</h2>
+      <button class="x" data-pclose aria-label="Cancel">×</button>
+    </div>
+    <div class="ctl">
+      <div class="shotsel">
+        ${SHOTS.map(([k,l]) => `<button class="${pop.shot===k?'on':''}" data-pshot="${k}">${l}</button>`).join('')}
+      </div>
+      ${pop.from === 'M'
+        /* same row as Hit/Tip, so the tallest popup (middle + dug by) still fits a phone */
+        ? `<span class="flabel">Middle set</span><div class="shotsel" title="Middle set (optional)">
+            ${MIDDLE_PLAYS.map(k => `<button class="${pop.play===k?'on':''}" data-pplay="${k}">${k}</button>`).join('')}
+          </div>`
+        : `<span class="fine">${pop.from ? 'Tap where it landed' : 'Pick where they hit from, then tap where it landed'}</span>`}
+    </div>
+    ${pop.stat === 'attack0' ? digRow() : ''}
+    ${shotSvg([], {pick: pop})}
+    <div class="ft">
+      <button class="btn" data-pskip>Skip location</button>
+      <button class="btn" data-pclose>Cancel</button>
+    </div>`;
+}
+
+modal.addEventListener('click', e => {
+  if(editing){
+    if(e.target === modal) return closeEdit();
+    const t = e.target.closest('[data-eplayer],[data-estat],[data-edelete],[data-eclose]');
+    return t && editEvent(t);
+  }
+  if(!pop) return;
+  if(e.target === modal) return closePlace();          // tap outside the sheet
+  const t = e.target.closest('[data-pshot],[data-pplay],[data-pdig],[data-from],[data-land],[data-pskip],[data-pclose]');
+  if(!t) return;
+  if(t.dataset.pclose !== undefined) return closePlace();
+  if(t.dataset.pshot){ pop.shot = t.dataset.pshot; return renderPop(); }
+  if(t.dataset.pdig){ pop.dig = pop.dig === t.dataset.pdig ? null : t.dataset.pdig; return renderPop(); }
+  if(t.dataset.pplay){ pop.play = pop.play === t.dataset.pplay ? null : t.dataset.pplay; return renderPop(); }
+  if(t.dataset.from){ setFrom(pop.from === t.dataset.from ? null : t.dataset.from); return renderPop(); }
+  const {stat, sel, shot, from, play, dig} = pop;
+  const loc = {shot, from, play, dig};
+  if(t.dataset.land !== undefined){
+    const svg = t.ownerSVGElement;
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const clamp = v => Math.round(Math.min(COURT, Math.max(0, v)) * 10) / 10;
+    loc.x = clamp(q.x); loc.y = clamp(q.y);
+  }
+  if(from) S.ui['from_'+sel] = from;
+  closePlace();
+  addStat(stat, loc);
+});
+
+/* ---------- edit sheet ----------
+   Any recent stat can be re-assigned to another player, changed to another
+   stat, or deleted. Changes apply as they're tapped. Moving an attack to a
+   non-attack stat drops its placement, which only means anything on an attack. */
+let editing = null;   // {id, confirmDelete} while the edit sheet is open
+
+function openEdit(id){ editing = {id, confirmDelete:false}; renderEdit(); modal.hidden = false; }
+function closeEdit(){ editing = null; modal.hidden = true; }
+
+function renderEdit(){
+  const m = current(), ev = m?.events.find(e => e.id === editing.id);
+  if(!ev) return closeEdit();
+  const t = team(ev.teamId);
+  const pid = ev.playerId ?? 'TEAM';
+  const chip = (id, label) => `<button class="${pid===id?'on':''}" data-eplayer="${id}">${label}</button>`;
+  sheet.innerHTML = `
+    <div class="hd">
+      <h2>Edit stat <span class="fine">· ${esc(t.name)} · set ${ev.set}</span></h2>
+      <button class="x" data-eclose aria-label="Close">×</button>
+    </div>
+    <span class="fine" style="display:block;margin-bottom:4px">Player</span>
+    <div class="digs" style="margin-bottom:10px">
+      ${t.players.map(p => chip(p.id, esc(jersey(p) ? '#'+jersey(p) : pFull(p)))).join('')}
+      ${chip('TEAM', 'Team')}
+    </div>
+    <span class="fine" style="display:block;margin-bottom:4px">Stat</span>
+    <div class="pgrid sm">
+      ${STATS.map(s => `<button class="pbtn ${s.tone} ${ev.stat===s.key?'cur':''}" data-estat="${s.key}">${s.short}</button>`).join('')}
+    </div>
+    <div class="ft">
+      <button class="btn danger" data-edelete>${editing.confirmDelete ? 'Tap again to delete' : 'Delete'}</button>
+      <button class="btn primary" data-eclose>Done</button>
+    </div>`;
+}
+
+function editEvent(t){
+  const m = current(), ev = m?.events.find(e => e.id === editing.id);
+  if(!ev) return closeEdit();
+  if(t.dataset.eclose !== undefined) return closeEdit();
+  if(t.dataset.edelete !== undefined){
+    if(!editing.confirmDelete){ editing.confirmDelete = true; return renderEdit(); }
+    m.events = m.events.filter(e => e.id !== ev.id);
+    save(); render(); closeEdit(); return toast('Deleted ' + STAT_LABEL[ev.stat]);
+  }
+  editing.confirmDelete = false;
+  if(t.dataset.eplayer) ev.playerId = t.dataset.eplayer === 'TEAM' ? null : t.dataset.eplayer;
+  if(t.dataset.estat){
+    ev.stat = t.dataset.estat;
+    if(!ATTACK_STATS.has(ev.stat)) for(const k of ['shot','from','play','x','y','zone']) delete ev[k];
+    else ev.shot ??= 'hit';
+  }
+  save(); render(); renderEdit();
 }
 
 function undo(){
@@ -1165,6 +1601,17 @@ function undo(){
 
 /* ---------- keyboard ---------- */
 document.addEventListener('keydown', e => {
+  if(editing){ if(e.key === 'Escape') closeEdit(); return; }
+  if(pop){                       // popup open: only its own keys, never a new stat
+    const k = e.key.toLowerCase();
+    if(k === 'escape'){ e.preventDefault(); return closePlace(); }
+    if(k === 'h' || k === 't'){ pop.shot = k === 't' ? 'tip' : 'hit'; renderPop(); }
+    const f = {p:'L', l:'L', m:'M', r:'R', b:'B'}[k];   // p = power
+    if(f){ setFrom(f); renderPop(); }
+    const play = pop.from === 'M' && MIDDLE_PLAYS.find(p => p[0] === k);
+    if(play){ pop.play = pop.play === play ? null : play; renderPop(); }
+    return;
+  }
   if(view !== 'match') return;
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   const tag = document.activeElement?.tagName;
@@ -1172,7 +1619,7 @@ document.addEventListener('keydown', e => {
 
   const k = e.key.toLowerCase();
   if(k === 'z'){ e.preventDefault(); return undo(); }
-  if(STAT_BY_KB[k]){ e.preventDefault(); addStat(STAT_BY_KB[k]); }
+  if(STAT_BY_KB[k]){ e.preventDefault(); requestStat(STAT_BY_KB[k]); }
 });
 
 /* ---------- export helpers ---------- */
@@ -1184,7 +1631,7 @@ function download(filename, text, type){
 }
 
 function exportCsv(){
-  const m = current(); if(!m) return;
+  const m = boxMatch(); if(!m) return;
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
   const lines = [['Team','#','Player','Pos', ...COLS.map(c=>c[0])].map(q).join(',')];
@@ -1208,7 +1655,7 @@ function exportCsv(){
    wide 6-zone layout, and unplaced attacks get an explicit row rather than
    quietly vanishing. */
 function exportPlacementCsv(){
-  const m = current(); if(!m) return;
+  const m = boxMatch(); if(!m) return;
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
   const lines = [['Team','#','Player','Shot','Zone','Attacks','Kills','Errors','Hit%'].map(q).join(',')];
