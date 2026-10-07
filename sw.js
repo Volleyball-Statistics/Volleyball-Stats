@@ -4,11 +4,12 @@
    again — airplane mode, dead Wi-Fi, doesn't matter.
 
    This caches the PROGRAM only. Your stats live in localStorage and are
-   never touched by, or visible to, this worker.
+   never touched by, or visible to, this worker. Shared-data sync talks to
+   Supabase directly; those requests are cross-origin and bypass this worker.
 
    Bump VERSION whenever index.html changes, or phones will keep serving
    the old cached copy forever. */
-const VERSION = 'vbstats-2026-10-07f';
+const VERSION = 'vbstats-2026-10-07g';
 
 const ASSETS = [
   './',
@@ -18,6 +19,7 @@ const ASSETS = [
   './icon-512.png',
   './icon-maskable.png',
   './apple-touch-icon.png',
+  './vendor/supabase-js-2.117.3.js',
 ];
 
 self.addEventListener('install', e => {
