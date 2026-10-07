@@ -89,13 +89,27 @@ This layout is what you get on the installed home-screen app — see
 
 Optional. Every attack still counts whether or not you locate it.
 
-**Recording.** Open **Attack placement** on the Match tab, pick **Hit** or **Tip**, tap a
-zone to arm it, then tap Kill / Att Error / In Play. The zone attaches to that one attack
-and clears, so it can never bleed onto the next rally. The three attack outcomes are
-repeated directly under the court, so the zone→outcome sequence never needs a scroll.
+**Recording.** Tap Kill / Att Error / In Play (or press `K` / `E` / `A`) and a popup asks
+where it landed:
 
-The court is **open by default on a desktop and closed on a phone** — the court plus the
-full stat pad don't both fit above the fold at 844px. Once you toggle it, your choice sticks.
+1. **Hit** or **Tip** (defaults to Hit every time; `H` / `T` on the keyboard).
+2. **Where the hitter took off** — Left, Middle, Right or Back row, drawn on their side of
+   the net. It's remembered per player, and pre-filled from position the first time
+   (OH → Left, MB → Middle, OPP → Right), so usually you skip straight to step 3.
+   Left/right are the *hitter's*, so their left side appears on the right of the drawing,
+   as you see it across the net.
+3. **Tap where it landed** on the court. That records the attack and closes the popup.
+
+**Skip location** still records the attack, just without a spot. **Cancel** (or `Esc`, or
+tapping outside) records nothing. Only in-court landings can be tapped — skip for balls
+that went out or into the net.
+
+**Shot chart.** Each located attack is a line from take-off to landing. **Orange = hit,
+blue = tip** (tips also end in a diamond, hits in a circle, so it reads without colour).
+**Solid = kill, dashed = not a kill.** The Match tab shows a live chart for whichever team
+you're recording; it's open by default on a desktop and closed on a phone, and your toggle
+sticks. Attacks recorded before exact spots existed are drawn as landing marks only,
+scattered inside their zone.
 
 **Zones** are the positions of the team *being attacked*, drawn like a rotation sheet with
 the net at the top:
@@ -106,9 +120,13 @@ the net at the top:
      5      6      1      back row
 ```
 
+The zone is derived from the tapped spot: columns are 3 m wide and the front row is
+everything inside the 3 m line.
+
 **Reading it.** The Box Score gets an *attack placement* panel per team: pick a player (or
-all), filter to hits or tips, and each zone shows attacks, kills and hitting % for that
-selection. Cell shading is a single-hue ramp on attack volume — the count is printed in
+all), filter to hits or tips, and you get the shot chart (with an **All attacks / Kills
+only** switch) beside the zone grid, where each zone shows attacks, kills and hitting % for
+that selection. "Kills only" filters the shot chart, not the zone counts. Cell shading is a single-hue ramp on attack volume — the count is printed in
 every cell too, so it reads fine in greyscale. **Export CSV** gives long format, one row per
 player × shot × zone, easy to pivot.
 

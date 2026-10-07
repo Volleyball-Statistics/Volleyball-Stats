@@ -8,7 +8,7 @@
 
    Bump VERSION whenever index.html changes, or phones will keep serving
    the old cached copy forever. */
-const VERSION = 'vbstats-2026-08-17b';
+const VERSION = 'vbstats-2026-10-07a';
 
 const ASSETS = [
   './',

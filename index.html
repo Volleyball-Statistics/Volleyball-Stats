@@ -172,9 +172,6 @@
   .place summary::after{content:'▾';margin-left:auto;font-size:11px}
   .place[open] summary::after{content:'▴'}
   .place[open] summary{margin-bottom:7px}
-  .prow{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-  .opt{font-size:9px;font-weight:700;color:var(--dim);text-transform:none;letter-spacing:0;
-    border:1px solid var(--line);border-radius:20px;padding:1px 7px;margin-left:5px}
   .fine{font-size:10px;color:var(--dim);font-weight:700;text-transform:none;letter-spacing:0}
   .shotsel{display:flex;gap:3px;background:var(--panel);padding:3px;border-radius:8px}
   .shotsel button{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;color:var(--muted);min-height:34px}
@@ -187,23 +184,66 @@
   .zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
     min-height:52px;border-radius:7px;border:1px solid var(--line);padding:5px 3px;
     transition:background .12s}
-  button.zone:hover{border-color:#4a5666}
-  .zone.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
   /* the zone number is the identifier, so it must stay legible on the darkest fill */
   .zone .zn{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em}
   .zone .zc{font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1.1;color:var(--fg)}
   .zone .zd{font-size:9.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
-  /* the three attack outcomes, repeated right under the court so the
-     zone -> outcome sequence never needs a scroll */
-  .quickatt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
-  .quickatt .pbtn{min-height:50px;font-size:11.5px;border-radius:9px}
-  .quickatt .pbtn .ct{font-size:15px}
   .cscale{display:flex;align-items:center;gap:3px;margin-top:7px;font-size:9px;color:var(--dim);font-weight:700}
   .cscale i{width:17px;height:9px;border-radius:2px;border:1px solid var(--line);display:block}
   .zchip{font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:20px;
     background:rgba(77,163,255,.16);color:var(--accent)}
 
-  .pgrid2{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:16px;align-items:start}
+  /* ============ shot chart ============
+     Hit = orange, tip = blue (validated CVD-safe pair on the court surface).
+     Colour is never the only cue: tips also end in a diamond, hits in a circle,
+     and outcome is carried by line style (solid kill / dashed not a kill). */
+  :root{--hit:#d95926; --tip:#3987e5}
+  .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:#0d1116;border:1px solid var(--line);
+    border-radius:9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .shots .floor{fill:#141a21}
+  .shots .ln{stroke:#3a4553;stroke-width:.5;fill:none}
+  .shots .bound{stroke:#93a1b1;stroke-width:.8;fill:none}
+  .shots .netl{stroke:var(--fg);stroke-width:1.4}
+  .shots .zl{fill:#66727f;font-size:5px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
+  .shots .sidel{fill:#66727f;font-size:3.4px;font-weight:800;letter-spacing:.3px;text-anchor:middle}
+  /* thin and slightly translucent: a full match is 60+ lines, and where they
+     pile up the overlap itself should read as "they go here a lot" */
+  .shots .mk{stroke-width:.75;stroke-linecap:round;fill:none;opacity:.8}
+  .shots .mk.miss{stroke-dasharray:2 1.6;stroke-width:.55;opacity:.5}
+  .shots .end{stroke:#0d1116;stroke-width:.6}
+  .shots .end.miss{fill:#0d1116;stroke-width:1}
+  .shots .from{cursor:pointer}
+  .shots .from circle{fill:#1e242c;stroke:#3a4553;stroke-width:.6}
+  .shots .from.on circle{fill:var(--accent);stroke:var(--accent)}
+  .shots .from text{fill:var(--muted);font-size:3.6px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
+  .shots .from.on text{fill:#06121f}
+  .shots .tapzone{cursor:crosshair}
+  /* court lines sit above the tap surface; let taps fall through them */
+  .shots .ln,.shots .bound,.shots .netl,.shots .sidel{pointer-events:none}
+  .slegend{display:flex;flex-wrap:wrap;gap:4px 13px;margin-top:7px;font-size:11px;color:var(--muted);font-weight:600;align-items:center}
+  .slegend svg{width:22px;height:10px;vertical-align:middle;margin-right:4px}
+
+  /* ============ placement popup ============ */
+  .modal{position:fixed;inset:0;z-index:90;background:rgba(5,7,10,.72);display:flex;
+    align-items:center;justify-content:center;padding:12px}
+  .modal[hidden]{display:none}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;width:100%;max-width:440px;
+    max-height:100%;overflow:auto;padding:13px 14px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .sheet .hd{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .sheet .hd h2{margin:0;font-size:15px}
+  .sheet .hd .x{margin-left:auto;width:36px;height:36px;border-radius:8px;font-size:20px;color:var(--muted)}
+  .sheet .ctl{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .sheet .ft{display:flex;gap:8px;margin-top:10px}
+  .sheet .ft .btn{flex:1;min-height:44px}
+  @media(max-width:700px){
+    .modal{align-items:flex-end;padding:0}
+    .sheet{border-radius:16px 16px 0 0;padding-bottom:calc(13px + env(safe-area-inset-bottom))}
+    /* 44px minimum touch target, like every other control on the phone layout */
+    .sheet .shotsel button{min-height:44px;padding:6px 20px;font-size:13px}
+    .sheet .hd .x{width:44px;height:44px}
+  }
+
+  .pgrid2{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:16px;align-items:start}
   @media(max-width:700px){.pgrid2{grid-template-columns:1fr;gap:11px}}
   .psum p{margin:0 0 9px;font-size:13px;color:var(--muted)}
   .psum p b{color:var(--fg)}
@@ -327,6 +367,8 @@
 
 <main id="app"></main>
 <div class="toast" id="toast"></div>
+<!-- lives outside #app so a re-render underneath never wipes it -->
+<div class="modal" id="placeModal" hidden><div class="sheet" id="placeSheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
 /* ============================================================
@@ -373,6 +415,34 @@ const ZONE_ORDER   = [4,3,2,5,6,1];
 const ATTACK_STATS = new Set(['kill','attackErr','attack0']);
 const SHOTS        = [['hit','Hit'],['tip','Tip']];
 const SHOT_LABEL   = Object.fromEntries(SHOTS);
+
+/* Where the hitter took off — the start of each line on the shot chart.
+   Named from the HITTER's point of view (their left = outside hitter), which
+   lands on the right of the drawing because you look at them across the net. */
+const FROMS      = [['L','Left'],['M','Middle'],['R','Right'],['B','Back row']];
+const FROM_LABEL = Object.fromEntries(FROMS);
+const FROM_BY_POS = {OH:'L', MB:'M', OPP:'R'};
+
+/* Court geometry for the shot chart, in SVG units (10 per metre).
+   The landing half is 9 m x 9 m with the net along y=0 and the 3 m line at
+   y=30; the hitter's side is drawn above the net, cropped to 4.5 m. */
+const CM = 10, COURT = 9*CM, LINE3 = 3*CM, THEIRS = 4.5*CM;
+const FROM_XY = {L:[75,-11], M:[45,-11], R:[15,-11], B:[45,-38]};
+/* zone from a landing point: columns are 3 m wide, rows split at the 3 m line */
+function zoneAt(x, y){
+  const col = x < 30 ? 0 : x < 60 ? 1 : 2;
+  return (y < LINE3 ? [4,3,2] : [5,6,1])[col];
+}
+/* attacks recorded before exact spots existed only know their zone: put them
+   in that zone with a stable per-event scatter so they don't stack on one pixel */
+const ZONE_XY = {4:[15,15],3:[45,15],2:[75,15],5:[15,60],6:[45,60],1:[75,60]};
+function landing(ev){
+  if(ev.x != null) return [ev.x, ev.y];
+  if(!ev.zone) return null;
+  let h = 0; for(const ch of ev.id) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  const [cx, cy] = ZONE_XY[ev.zone];
+  return [cx + ((h % 17) - 8), cy + (((h >> 5) % 17) - 8)];
+}
 
 const CATS = [...new Set(STATS.map(s=>s.cat))];
 const STAT_BY_KB = Object.fromEntries(STATS.map(s=>[s.kb.toLowerCase(),s.key]));
@@ -474,10 +544,9 @@ const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','
 /* Court diagram. Shading is a SEQUENTIAL single-hue ramp on attack volume
    (light -> dark, never a rainbow); every cell also prints its count, so the
    colour is redundant encoding and the chart still reads in greyscale. */
-function courtHtml(cells, {arm=null, clickable=false, detail=false}={}){
+function courtHtml(cells, {detail=false}={}){
   const counts = ZONE_ORDER.map(z => cells[z]?.att ?? 0);
   const max = Math.max(1, ...counts);
-  const tag = clickable ? 'button' : 'div';
   return `<div class="court">
     <div class="net">NET</div>
     <div class="zones">
@@ -489,12 +558,11 @@ function courtHtml(cells, {arm=null, clickable=false, detail=false}={}){
           ? `Zone ${z} — ${c.att} attack${c.att===1?'':'s'}, ${c.kill} kill${c.kill===1?'':'s'}, `
             + `${c.err} error${c.err===1?'':'s'}, hitting ${pct3(hp)}`
           : `Zone ${z} — no attacks`;
-        return `<${tag} class="zone ${arm===z?'on':''}" ${clickable?`data-zone="${z}"`:''}
-            style="background:rgba(77,163,255,${a.toFixed(3)})" title="${esc(tip)}">
+        return `<div class="zone" style="background:rgba(77,163,255,${a.toFixed(3)})" title="${esc(tip)}">
           <span class="zn">${z}</span>
           <span class="zc num">${c?.att ?? 0}</span>
           ${detail && c?.att ? `<span class="zd num">${c.kill}K · ${pct3(hp)}</span>` : ''}
-        </${tag}>`;
+        </div>`;
       }).join('')}
     </div>
   </div>`;
@@ -509,6 +577,84 @@ function courtScale(max){
   return `<div class="cscale"><span>0</span>
     ${steps.map(s=>`<i style="background:rgba(77,163,255,${(s?0.10+0.42*s:0).toFixed(3)})"></i>`).join('')}
     <span>${max} attack${max===1?'':'s'}</span></div>`;
+}
+
+/* Shot chart: one line per located attack, from the hitter's take-off spot
+   to where it landed. Colour = shot (hit / tip), line style = outcome.
+   With `pick`, it is the input surface for the placement popup instead. */
+function shotSvg(events, {pick=null}={}){
+  const zl = ZONE_ORDER.map(z => {
+    const [x, y] = ZONE_XY[z];
+    return `<text class="zl" x="${x}" y="${y}">${z}</text>`;
+  }).join('');
+
+  const fromMarks = FROMS.map(([k, l]) => {
+    const [x, y] = FROM_XY[k];
+    return pick
+      ? `<g class="from ${pick.from===k?'on':''}" data-from="${k}">
+           <circle cx="${x}" cy="${y}" r="7.5"/><text x="${x}" y="${y}">${k==='B'?'Back':k==='M'?'Mid':l}</text></g>`
+      : `<text class="sidel" x="${x}" y="${y-4}">${k==='B'?'BACK ROW':l.toUpperCase()}</text>`;
+  }).join('');
+
+  // misses first so kills draw on top of them
+  const sorted = [...events].sort((a,b) => (a.stat==='kill') - (b.stat==='kill'));
+  const marks = sorted.map(ev => {
+    const pt = landing(ev); if(!pt) return '';
+    const [x, y] = pt, from = FROM_XY[ev.from];
+    const tip = ev.shot === 'tip', kill = ev.stat === 'kill';
+    const col = tip ? 'var(--tip)' : 'var(--hit)';
+    const miss = kill ? '' : 'miss';
+    const p = ev.playerId ? player(ev.playerId) : null;
+    const title = [p ? pFull(p) : 'Team', STAT_LABEL[ev.stat], tip ? 'tip' : 'hit',
+                   ev.from ? 'from ' + FROM_LABEL[ev.from].toLowerCase() : null,
+                   'zone ' + zoneAt(x, y), 'set ' + ev.set].filter(Boolean).join(' · ');
+    // inline style: the .end CSS would otherwise beat SVG presentation attributes
+    const paint = kill ? `fill:${col}` : `stroke:${col}`;
+    const end = tip
+      ? `<path class="end ${miss}" d="M${x} ${y-2.6}L${x+2.6} ${y}L${x} ${y+2.6}L${x-2.6} ${y}Z" style="${paint}"/>`
+      : `<circle class="end ${miss}" cx="${x}" cy="${y}" r="2.1" style="${paint}"/>`;
+    return `<g><title>${esc(title)}</title>
+      ${from ? `<line class="mk ${miss}" x1="${from[0]}" y1="${from[1]}" x2="${x}" y2="${y}" stroke="${col}"/>` : ''}
+      ${end}</g>`;
+  }).join('');
+
+  return `<svg class="shots" viewBox="-5 ${-THEIRS-2} ${COURT+10} ${COURT+THEIRS+7}" role="img"
+      aria-label="Shot chart">
+    <rect class="floor" x="0" y="${-THEIRS}" width="${COURT}" height="${THEIRS}"/>
+    <line class="ln" x1="0" y1="${-LINE3}" x2="${COURT}" y2="${-LINE3}"/>
+    <rect class="floor ${pick?'tapzone':''}" x="0" y="0" width="${COURT}" height="${COURT}" ${pick?'data-land':''}/>
+    <line class="ln" x1="30" y1="0" x2="30" y2="${COURT}"/>
+    <line class="ln" x1="60" y1="0" x2="60" y2="${COURT}"/>
+    <line class="bound" x1="0" y1="${LINE3}" x2="${COURT}" y2="${LINE3}"/>
+    <rect class="bound" x="0" y="0" width="${COURT}" height="${COURT}"/>
+    <g pointer-events="none">${zl}</g>
+    <line class="netl" x1="-3" y1="0" x2="${COURT+3}" y2="0"/>
+    ${fromMarks}
+    <g ${pick?'pointer-events="none"':''}>${marks}</g>
+  </svg>`;
+}
+
+/* legend: names both encodings, so identity never rests on colour alone */
+function shotLegend(){
+  const sw = (col, dash, shape) => `<svg viewBox="0 0 22 10">
+    <line x1="1" y1="5" x2="15" y2="5" stroke="${col}" stroke-width="2" ${dash?'stroke-dasharray="3 2"':''}/>
+    ${shape==='d' ? `<path d="M18 1.5L21.5 5L18 8.5L14.5 5Z" fill="${col}"/>` : `<circle cx="18" cy="5" r="3" fill="${col}"/>`}</svg>`;
+  return `<div class="slegend">
+    <span>${sw('var(--hit)', false, 'c')}Hit</span>
+    <span>${sw('var(--tip)', false, 'd')}Tip</span>
+    <span>${sw('var(--muted)', false, 'c')}Solid = kill</span>
+    <span>${sw('var(--muted)', true, 'c')}Dashed = not a kill</span>
+  </div>`;
+}
+
+/* the located attacks a shot chart draws, under the usual placement filters */
+function shotEvents(m, teamId, {playerId=null, shot=null, set=null, killsOnly=false}={}){
+  return m.events.filter(ev =>
+    ev.teamId === teamId && ATTACK_STATS.has(ev.stat) && landing(ev)
+    && (!set || ev.set === set)
+    && (!playerId || (ev.playerId ?? 'TEAM') === playerId)
+    && (!shot || (ev.shot || 'hit') === shot)
+    && (!killsOnly || ev.stat === 'kill'));
 }
 
 let toastTimer;
@@ -580,41 +726,22 @@ function vMatch(){
     <button class="${ui.set===i+1?'on':''}" data-set="${i+1}">${i+1}</button>`).join('')
     + `<button data-newset title="Start a new set">+</button>`;
 
-  ui.shot ??= 'hit';
-  /* Default open where there's room, closed on a phone — the court plus the
+  /* Default open where there's room, closed on a phone — the chart plus the
      full stat pad don't both fit above the fold at 844px. Once the user
      toggles it, their choice wins on both. */
   const roomy = typeof matchMedia === 'function' ? matchMedia('(min-width:701px)').matches : true;
   const courtOpen = S.ui.court ?? roomy;
-  const zoneCells = sel ? placement(m, teamId, {playerId: sel}).grid : {};
+  const teamShots = shotEvents(m, teamId);
   const courtBlock = `
     <details class="place" ${courtOpen ? 'open' : ''}>
       <summary>
-        <span>Attack placement <span class="opt">optional</span></span>
-        ${ui.zone ? `<span class="zchip">zone ${ui.zone} armed</span>` : ''}
+        <span>Shot chart — ${esc(t.name)}</span>
+        <span class="zchip">${teamShots.length}</span>
       </summary>
-      <div class="prow">
-        <div class="shotsel">
-          ${SHOTS.map(([k,l])=>`<button class="${ui.shot===k?'on':''}" data-shot="${k}">${l}</button>`).join('')}
-        </div>
-        <div class="spacer"></div>
-        <span class="fine">this player, this match</span>
-      </div>
-      ${courtHtml(zoneCells, {arm: ui.zone ?? null, clickable: true})}
-      <div class="quickatt">
-        ${['kill','attackErr','attack0'].map(k => {
-          const s = STATS.find(x => x.key === k);
-          return `<button class="pbtn ${s.tone}" data-stat="${k}">
-            <span class="ct ${counts[k]?'':'z'} num">${counts[k]}</span>${s.short}
-          </button>`;
-        }).join('')}
-      </div>
+      ${shotSvg(teamShots)}
+      ${shotLegend()}
       <div class="hint" style="margin-top:6px">
-        ${ui.zone
-          ? `Zone <b style="color:var(--accent)">${ui.zone}</b> armed — next attack lands there as a
-             <b>${SHOT_LABEL[ui.shot].toLowerCase()}</b>, then clears.`
-          : `Tap a zone, then an outcome above.<span class="wide"> Skip the zone and the attack still
-             counts, just without a location.</span>`}
+        Whole team, this match. Tap Kill / Att Error / In Play and you'll be asked where it landed.
       </div>
     </details>`;
 
@@ -643,6 +770,7 @@ function vMatch(){
       <span class="badge">${esc(teamName(ev.teamId).slice(0,14))}</span>
       <span>${p ? esc(pFull(p)) : 'Team'}</span>
       <span class="s ${st.tone==='good'?'pos':st.tone==='bad'?'neg':''}">${st.label}</span>
+      ${ev.from ? `<span class="zchip">${FROM_LABEL[ev.from].toLowerCase()}</span>` : ''}
       ${ev.zone ? `<span class="zchip">Z${ev.zone}</span>` : ''}
       ${ev.shot === 'tip' ? `<span class="zchip">tip</span>` : ''}
       <span class="t">S${ev.set}</span>
@@ -797,6 +925,9 @@ function placePanel(m, teamId, f){
   const label = who
     ? (who==='TEAM' ? 'Team / unassigned' : pFull(player(who)))
     : 'All players';
+  const killsOnly = !!S.ui.placeKills;
+  const shots = shotEvents(m, teamId, {...f, playerId: who||null, shot: shot||null, killsOnly});
+  const noLine = shots.filter(ev => !ev.from).length;
 
   return `
   <div class="panel">
@@ -816,10 +947,25 @@ function placePanel(m, teamId, f){
     </div>
     <div class="pgrid2">
       <div>
-        ${courtHtml(grid, {detail:true})}
-        ${courtScale(max)}
+        <div class="row" style="margin-bottom:7px">
+          <h3 style="margin:0">Shot chart</h3>
+          <div class="spacer"></div>
+          <div class="setpills" style="margin:0;grid-column:auto">
+            <button class="${killsOnly?'':'on'}" data-placekills="0">All attacks</button>
+            <button class="${killsOnly?'on':''}" data-placekills="1">Kills only</button>
+          </div>
+        </div>
+        ${shotSvg(shots)}
+        ${shotLegend()}
+        ${noLine ? `<p class="fine" style="margin:6px 0 0">${noLine} shot${noLine===1?'':'s'} with no
+          hitting position recorded — drawn as a landing mark only.</p>` : ''}
       </div>
       <div class="psum">
+        <h3>By zone</h3>
+        <div style="max-width:300px;margin-bottom:10px">
+          ${courtHtml(grid, {detail:true})}
+          ${courtScale(max)}
+        </div>
         <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
         ${located
           ? `<p>${located} located attack${located===1?'':'s'}.
@@ -831,7 +977,10 @@ function placePanel(m, teamId, f){
                location — not shown on the court.</p>`
           : ''}
         <p class="fine">Zones are the positions of the team being attacked, net at top:
-          4-3-2 front row, 5-6-1 back row. Each cell shows attacks, then kills and hitting %.</p>
+          4-3-2 front row (inside the 3 m line), 5-6-1 back row. Each cell shows attacks, then kills
+          and hitting %. The shot chart draws each located attack from where the hitter took off —
+          their left side appears on the right, as seen across the net. "Kills only" applies to the
+          shot chart, not the zone counts.</p>
       </div>
     </div>
   </div>`;
@@ -999,26 +1148,20 @@ function wire(){
   on('[data-go]','click', e => go(e.currentTarget.dataset.go));
 
   /* --- match view --- */
-  on('[data-side]','click', e => { S.ui.side = e.currentTarget.dataset.side; S.ui.zone = null; save(); render(); });
+  on('[data-side]','click', e => { S.ui.side = e.currentTarget.dataset.side; save(); render(); });
   on('[data-set]','click',  e => { S.ui.set = +e.currentTarget.dataset.set; save(); render(); });
   on('[data-sel]','click',  e => {
     const m = current(), tid = S.ui.side==='a' ? m.teamA : m.teamB;
     S.ui['sel_'+tid] = e.currentTarget.dataset.sel;
-    S.ui.zone = null;                       // never carry an armed zone to another player
     save(); render();
   });
-  on('[data-zone]','click', e => {
-    const z = +e.currentTarget.dataset.zone;
-    S.ui.zone = S.ui.zone === z ? null : z; // tapping the armed zone disarms it
-    save(); render();
-  });
-  on('[data-shot]','click', e => { S.ui.shot = e.currentTarget.dataset.shot; save(); render(); });
   on('[data-placeplayer]','change', e => {
     S.ui['place_'+e.target.dataset.placeplayer] = e.target.value; save(); render();
   });
   on('[data-placeshot]','click', e => { S.ui.placeShot = e.currentTarget.dataset.placeshot; save(); render(); });
+  on('[data-placekills]','click', e => { S.ui.placeKills = e.currentTarget.dataset.placekills === '1'; save(); render(); });
   on('[data-placecsv]','click', exportPlacementCsv);
-  on('[data-stat]','click', e => addStat(e.currentTarget.dataset.stat));
+  on('[data-stat]','click', e => requestStat(e.currentTarget.dataset.stat));
   on('[data-undo]','click', undo);
   // <details> resets on every re-render, so its open state has to be persisted
   on('details.more','toggle', e => { S.ui.more = e.target.open; save(); });
@@ -1135,25 +1278,104 @@ function addPlayer(tid){
   if(rows.length > 1) toast(rows.length + ' players added');
 }
 
-function addStat(stat){
-  const m = current(); if(!m) return;
+function selection(){
+  const m = current(); if(!m) return null;
   const teamId = S.ui.side==='a' ? m.teamA : m.teamB;
-  const sel = S.ui['sel_'+teamId];
+  return {m, teamId, sel: S.ui['sel_'+teamId]};
+}
+
+/* Every button and shortcut comes through here: attacks open the placement
+   popup, everything else records straight away. */
+function requestStat(stat){
+  const s = selection(); if(!s) return;
+  if(!s.sel) return toast('Select a player first');
+  if(ATTACK_STATS.has(stat)) openPlace(stat, s.sel);
+  else addStat(stat);
+}
+
+/* loc = {shot, from, x, y} from the popup; x/y absent when skipped */
+function addStat(stat, loc=null){
+  const s = selection(); if(!s) return;
+  const {m, teamId, sel} = s;
   if(!sel) return toast('Select a player first');
 
   const ev = {id:uid(), set:S.ui.set, teamId,
               playerId: sel==='TEAM' ? null : sel, stat};
   let note = '';
   if(ATTACK_STATS.has(stat)){
-    ev.shot = S.ui.shot || 'hit';
-    if(S.ui.zone){ ev.zone = S.ui.zone; note = ` → zone ${ev.zone}`; }
+    ev.shot = loc?.shot || 'hit';
+    if(loc?.from) ev.from = loc.from;
+    if(loc?.x != null){
+      ev.x = loc.x; ev.y = loc.y; ev.zone = zoneAt(loc.x, loc.y);
+      note = ` → zone ${ev.zone}`;
+    }
     note += ` (${SHOT_LABEL[ev.shot].toLowerCase()})`;
   }
   m.events.push(ev);
-  S.ui.zone = null;              // a zone arms one attack, then clears
   save(); render();
   toast(STAT_LABEL[stat] + note);
 }
+
+/* ---------- placement popup ----------
+   Opens on every attack. The hitter's take-off spot is remembered per player
+   (an outside hitter keeps swinging from the left), so the usual case is one
+   tap on the landing spot. Skip still records the attack, just unlocated. */
+let pop = null;   // {stat, sel, shot, from} while the popup is open
+const modal = document.getElementById('placeModal');
+const sheet = document.getElementById('placeSheet');
+
+function openPlace(stat, sel){
+  const p = sel === 'TEAM' ? null : player(sel);
+  pop = {stat, sel, shot:'hit',
+         from: S.ui['from_'+sel] ?? FROM_BY_POS[p?.pos] ?? null};
+  renderPop();
+  modal.hidden = false;
+}
+function closePlace(){ pop = null; modal.hidden = true; }
+
+function renderPop(){
+  const p = pop.sel === 'TEAM' ? null : player(pop.sel);
+  const st = STATS.find(s => s.key === pop.stat);
+  sheet.innerHTML = `
+    <div class="hd">
+      <h2><span class="${st.tone==='good'?'pos':st.tone==='bad'?'neg':''}">${st.label}</span>
+        — ${p ? esc(pFull(p)) : 'Team'}</h2>
+      <button class="x" data-pclose aria-label="Cancel">×</button>
+    </div>
+    <div class="ctl">
+      <div class="shotsel">
+        ${SHOTS.map(([k,l]) => `<button class="${pop.shot===k?'on':''}" data-pshot="${k}">${l}</button>`).join('')}
+      </div>
+      <span class="fine">${pop.from ? 'Tap where it landed' : 'Pick where they hit from, then tap where it landed'}</span>
+    </div>
+    ${shotSvg([], {pick: pop})}
+    <div class="ft">
+      <button class="btn" data-pskip>Skip location</button>
+      <button class="btn" data-pclose>Cancel</button>
+    </div>`;
+}
+
+modal.addEventListener('click', e => {
+  if(!pop) return;
+  if(e.target === modal) return closePlace();          // tap outside the sheet
+  const t = e.target.closest('[data-pshot],[data-from],[data-land],[data-pskip],[data-pclose]');
+  if(!t) return;
+  if(t.dataset.pclose !== undefined) return closePlace();
+  if(t.dataset.pshot){ pop.shot = t.dataset.pshot; return renderPop(); }
+  if(t.dataset.from){ pop.from = pop.from === t.dataset.from ? null : t.dataset.from; return renderPop(); }
+  const {stat, sel, shot, from} = pop;
+  const loc = {shot, from};
+  if(t.dataset.land !== undefined){
+    const svg = t.ownerSVGElement;
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const clamp = v => Math.round(Math.min(COURT, Math.max(0, v)) * 10) / 10;
+    loc.x = clamp(q.x); loc.y = clamp(q.y);
+  }
+  if(from) S.ui['from_'+sel] = from;
+  closePlace();
+  addStat(stat, loc);
+});
 
 function undo(){
   const m = current();
@@ -1165,6 +1387,14 @@ function undo(){
 
 /* ---------- keyboard ---------- */
 document.addEventListener('keydown', e => {
+  if(pop){                       // popup open: only its own keys, never a new stat
+    const k = e.key.toLowerCase();
+    if(k === 'escape'){ e.preventDefault(); return closePlace(); }
+    if(k === 'h' || k === 't'){ pop.shot = k === 't' ? 'tip' : 'hit'; renderPop(); }
+    const f = {l:'L', m:'M', r:'R', b:'B'}[k];
+    if(f){ pop.from = f; renderPop(); }
+    return;
+  }
   if(view !== 'match') return;
   if(e.metaKey || e.ctrlKey || e.altKey) return;
   const tag = document.activeElement?.tagName;
@@ -1172,7 +1402,7 @@ document.addEventListener('keydown', e => {
 
   const k = e.key.toLowerCase();
   if(k === 'z'){ e.preventDefault(); return undo(); }
-  if(STAT_BY_KB[k]){ e.preventDefault(); addStat(STAT_BY_KB[k]); }
+  if(STAT_BY_KB[k]){ e.preventDefault(); requestStat(STAT_BY_KB[k]); }
 });
 
 /* ---------- export helpers ---------- */
