@@ -372,6 +372,13 @@
     th,td{padding:6px 7px}
   }
 
+  .syncpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted);
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
+  .syncpill[hidden]{display:none}
+  .syncpill::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--dim)}
+  .syncpill.synced::before{background:var(--good)}
+  .syncpill.pending::before,.syncpill.connecting::before{background:var(--warn)}
+  .syncpill.offline::before,.syncpill.error::before{background:var(--bad)}
   .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel2);
     border:1px solid var(--line);padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;
     box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .18s;z-index:100}
@@ -387,6 +394,7 @@
 <header>
   <div class="bar">
     <div class="brand">🏐 Volleyball <span>Stats</span></div>
+    <button class="syncpill" id="syncpill" hidden data-v-sync title="Shared data"></button>
     <nav>
       <button data-v="match" class="on">Match</button>
       <button data-v="box">Box Score</button>
@@ -401,6 +409,9 @@
 <!-- lives outside #app so a re-render underneath never wipes it -->
 <div class="modal" id="placeModal" hidden><div class="sheet" id="placeSheet" role="dialog" aria-modal="true"></div></div>
 
+<!-- Supabase client, vendored so the app still loads offline. Only used once
+     someone signs in to shared data; until then nothing leaves the device. -->
+<script src="./vendor/supabase-js-2.117.3.js"></script>
 <script>
 /* ============================================================
    Volleyball Stats — 100% local. All data lives in this
@@ -494,8 +505,29 @@ function load(){
     return Object.assign(blank(), JSON.parse(raw));
   }catch(e){ console.error('load failed',e); return blank(); }
 }
-function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
+function save(){
+  ensureStamps();
+  localStorage.setItem(KEY, JSON.stringify(S));
+  schedulePush();
+}
 const uid = () => Math.random().toString(36).slice(2,10);
+/* A random id for this install, put on every stat it records, so Undo only
+   ever takes back this device's own last tap once several people record. */
+const DEVICE = (() => {
+  let d = localStorage.getItem('vbstats.device');
+  if(!d){ d = uid() + uid(); localStorage.setItem('vbstats.device', d); }
+  return d;
+})();
+
+/* Creation stamps give every team, player, match and stat one order that all
+   devices agree on (array position doesn't survive a merge). Anything without
+   one is stamped in its current order, so existing data keeps its order. */
+let lastStamp = 0;
+const stamp = () => (lastStamp = Math.max(Date.now(), lastStamp + 1));
+function ensureStamps(){
+  for(const t of S.teams){ t.c ??= stamp(); for(const p of t.players) p.c ??= stamp(); }
+  for(const m of S.matches){ m.c ??= stamp(); for(const ev of m.events) ev.t ??= stamp(); }
+}
 
 /* ---------- lookups ---------- */
 const team    = id => S.teams.find(t=>t.id===id);
@@ -1231,6 +1263,8 @@ function vMatches(){
     <div class="list">${list || `<div class="empty">No matches yet.</div>`}</div>
   </div>
 
+  ${sharedPanel()}
+
   <div class="panel">
     <h2>Backup</h2>
     <div class="row">
@@ -1239,8 +1273,12 @@ function vMatches(){
       <div class="spacer"></div>
       <button class="btn danger" data-wipe>Erase everything</button>
     </div>
-    <div class="hint">Everything lives in this browser's localStorage on this machine only — nothing is uploaded.
-      Export before clearing browser data or switching browsers.</div>
+    <div class="hint">${sync.live
+      ? `This device keeps a copy of the shared data. Export saves that copy to a file. While
+         signed in, Import <b>adds</b> a file's teams and matches to the shared data and never
+         removes anything.`
+      : `Everything lives in this browser's localStorage on this machine only — nothing is uploaded.
+         Export before clearing browser data or switching browsers.`}</div>
     <input type="file" id="fileIn" accept="application/json" style="display:none">
   </div>`;
 }
@@ -1345,7 +1383,7 @@ function wire(){
   });
   on('[data-delmatch]','click', e => {
     const id = e.currentTarget.dataset.delmatch;
-    if(!confirm('Delete this match and all of its stats?')) return;
+    if(!confirm('Delete this match and all of its stats?' + (sync.live ? ' This deletes it for everyone on the shared data.' : ''))) return;
     S.matches = S.matches.filter(m=>m.id!==id);
     if(S.activeMatch===id) S.activeMatch = S.matches.at(-1)?.id ?? null;
     save(); render();
@@ -1363,14 +1401,23 @@ function wire(){
       try{
         const d = JSON.parse(r.result);
         if(!Array.isArray(d.teams) || !Array.isArray(d.matches)) throw new Error('not a stats file');
+        if(sync.live){
+          if(!confirm("Add this file's teams and matches to the shared data? Nothing already there is removed.")) return;
+          mergeImport(d); save(); render(); return toast('Added to shared data');
+        }
         if(!confirm('Replace all current data with this file?')) return;
         S = Object.assign(blank(), d); save(); render(); toast('Imported');
       }catch(err){ alert('Could not import: ' + err.message); }
     };
     r.readAsText(f);
   };
+  on('[data-signin]','click', signInFromForm);
+  on('#sbPass','keydown', e => { if(e.key === 'Enter') signInFromForm(); });
+  on('[data-signout]','click', signOut);
   on('[data-wipe]','click', () => {
-    if(!confirm('Erase ALL teams, matches and stats? This cannot be undone.')) return;
+    if(!confirm(sync.live
+      ? 'Erase ALL teams, matches and stats FOR EVERYONE on the shared data? This cannot be undone.'
+      : 'Erase ALL teams, matches and stats? This cannot be undone.')) return;
     if(!confirm('Really erase everything? Export first if you want a backup.')) return;
     S = blank(); save(); render(); toast('Erased');
   });
@@ -1419,7 +1466,7 @@ function addStat(stat, loc=null){
   if(!sel) return toast('Select a player first');
 
   const ev = {id:uid(), set:S.ui.set, teamId,
-              playerId: sel==='TEAM' ? null : sel, stat};
+              playerId: sel==='TEAM' ? null : sel, stat, dev: DEVICE};
   let note = '';
   if(ATTACK_STATS.has(stat)){
     ev.shot = loc?.shot || 'hit';
@@ -1436,7 +1483,7 @@ function addStat(stat, loc=null){
   if(loc?.dig && stat === 'attack0'){
     const other = teamId === m.teamA ? m.teamB : m.teamA;
     const d = {id:uid(), set:S.ui.set, teamId: other,
-               playerId: loc.dig === 'TEAM' ? null : loc.dig, stat:'dig'};
+               playerId: loc.dig === 'TEAM' ? null : loc.dig, stat:'dig', dev: DEVICE};
     m.events.push(d); ids.push(d.id);
     const dp = d.playerId ? player(d.playerId) : null;
     note += ` · dug by ${dp ? pFull(dp) : 'team'}`;
@@ -1509,6 +1556,10 @@ function renderPop(){
 }
 
 modal.addEventListener('click', e => {
+  if(dialog){
+    const c = e.target.closest('[data-choice]');
+    return c && closeDialog(c.dataset.choice);
+  }
   if(editing){
     if(e.target === modal) return closeEdit();
     const t = e.target.closest('[data-eplayer],[data-estat],[data-edelete],[data-eclose]');
@@ -1591,16 +1642,20 @@ function editEvent(t){
   save(); render(); renderEdit();
 }
 
+/* Takes back this device's own most recent stat — never one someone else
+   recorded on another phone, even if theirs arrived later. */
 function undo(){
-  const m = current();
-  if(!m || !m.events.length) return;
-  const ev = m.events.pop();
+  const m = current(); if(!m) return;
+  const i = m.events.findLastIndex(ev => !ev.dev || ev.dev === DEVICE);
+  if(i < 0) return toast('Nothing of yours to undo');
+  const [ev] = m.events.splice(i, 1);
   save(); render();
   toast('Undid ' + STAT_LABEL[ev.stat]);
 }
 
 /* ---------- keyboard ---------- */
 document.addEventListener('keydown', e => {
+  if(dialog){ if(e.key === 'Escape') closeDialog('cancel'); return; }
   if(editing){ if(e.key === 'Escape') closeEdit(); return; }
   if(pop){                       // popup open: only its own keys, never a new stat
     const k = e.key.toLowerCase();
@@ -1680,6 +1735,465 @@ function exportPlacementCsv(){
   download(`attack-placement-${m.date}-${label}.csv`, lines.join('\n'), 'text/csv');
 }
 
+/* ============================================================
+   SHARED DATA (optional) — live sync through Supabase
+   ============================================================
+   Off until someone signs in. Every device keeps its full copy in localStorage
+   and keeps working offline; Supabase holds one row per team / player / match /
+   stat in `records`, and every signed-in device mirrors it.
+
+   How changes move:
+   - `base` remembers a hash of each record as the server last had it. Any
+     record whose hash now differs is a local change still to upload, so
+     taps made offline are simply uploaded on reconnect — no separate queue.
+   - A record that's gone locally but still in `base` is uploaded as a
+     tombstone (deleted = true), so other devices remove it too.
+   - Incoming changes (live, or caught up on reconnect) are applied to S unless
+     this device has its own un-uploaded change to that record, in which case
+     ours is about to land and wins. Last write wins per record; stats are
+     separate records, so two people recording at once never collide.
+   UI state (S.ui, which match you're recording) stays on the device.        */
+const SB = (() => {
+  /* local test override, set from the console only:
+     localStorage.setItem('vbstats.sbdev', JSON.stringify({url, key})) */
+  try{
+    const o = JSON.parse(localStorage.getItem('vbstats.sbdev') || 'null');
+    if(o?.url && o?.key) return o;
+  }catch(e){}
+  // The publishable key is public by design: it grants nothing without a
+  // signed-in account that's on the team's list (see supabase/schema.sql).
+  return {url:'https://cqjquktoczapangtxayx.supabase.co',
+          key:'sb_publishable_a6ZPD2t3lumqbk5m-QAwGg_b_mIgSfZ'};
+})();
+const SYNC_KEY = 'vbstats.sync.v1', AUTH_KEY = 'vbstats.auth';
+const KIND_ORDER = {team:0, player:1, match:2, event:3};
+
+const sync = {live:false, connected:false, status:'off', email:null, pending:0, error:null};
+let sb = null, channel = null, base = {}, since = null, orphans = [];
+
+function loadSync(){
+  try{ const o = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); base = o.base || {}; since = o.since || null; }
+  catch(e){ base = {}; since = null; }
+}
+function saveSync(){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify({base, since})); }catch(e){} }
+
+/* stable JSON (sorted keys) so the same record always hashes the same */
+const canon = v => v === null || typeof v !== 'object' ? JSON.stringify(v ?? null)
+  : Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
+  : '{' + Object.keys(v).filter(k => v[k] !== undefined).sort()
+      .map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+function hash(str){
+  let h = 0x811c9dc5;
+  for(let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36) + '.' + str.length.toString(36);
+}
+const hashOf = data => hash(canon(data));
+
+/* S -> one record per thing */
+function toRecords(){
+  const out = new Map(), put = (kind, id, data) => out.set(kind + ':' + id, {kind, id, data});
+  for(const t of S.teams){
+    put('team', t.id, {name: t.name, c: t.c});
+    for(const {id, ...p} of t.players) put('player', id, {...p, teamId: t.id});
+  }
+  for(const {id, events, ...m} of S.matches){
+    put('match', id, m);
+    for(const {id: eid, ...e} of events) put('event', eid, {...e, matchId: id});
+  }
+  return out;
+}
+
+/* records -> S */
+const stampOrder = k => (a, b) => (a[k] ?? 0) - (b[k] ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+function placeSorted(arr, obj, k){
+  const i = arr.findIndex(x => stampOrder(k)(obj, x) < 0);
+  i < 0 ? arr.push(obj) : arr.splice(i, 0, obj);
+}
+function replaceFields(obj, data, keep){
+  for(const k of Object.keys(obj)) if(!keep.includes(k) && !(k in data)) delete obj[k];
+  Object.assign(obj, data);
+}
+/* returns false when it can't be placed yet (its team / match hasn't arrived) */
+function applyRecord({kind, id, data, deleted}){
+  if(kind === 'team'){
+    const i = S.teams.findIndex(t => t.id === id);
+    if(deleted){ if(i >= 0) S.teams.splice(i, 1); }
+    else if(i >= 0) replaceFields(S.teams[i], data, ['id', 'players']);
+    else placeSorted(S.teams, {id, ...data, players: []}, 'c');
+    return true;
+  }
+  if(kind === 'player'){
+    const {teamId, ...p} = data;
+    for(const t of S.teams){
+      const j = t.players.findIndex(x => x.id === id);
+      if(j < 0) continue;
+      if(deleted || t.id !== teamId) t.players.splice(j, 1);
+      else { replaceFields(t.players[j], p, ['id']); return true; }
+    }
+    if(deleted) return true;
+    const t = team(teamId); if(!t) return false;
+    placeSorted(t.players, {id, ...p}, 'c');
+    return true;
+  }
+  if(kind === 'match'){
+    const i = S.matches.findIndex(m => m.id === id);
+    if(deleted){ if(i >= 0) S.matches.splice(i, 1); }
+    else if(i >= 0) replaceFields(S.matches[i], data, ['id', 'events']);
+    else placeSorted(S.matches, {id, ...data, events: []}, 'c');
+    return true;
+  }
+  if(kind === 'event'){
+    const {matchId, ...e} = data;
+    for(const m of S.matches){
+      const j = m.events.findIndex(x => x.id === id);
+      if(j < 0) continue;
+      if(deleted || m.id !== matchId) m.events.splice(j, 1);
+      else { replaceFields(m.events[j], e, ['id']); return true; }
+    }
+    if(deleted) return true;
+    const m = match(matchId); if(!m) return false;
+    placeSorted(m.events, {id, ...e}, 't');
+    return true;
+  }
+  return true;
+}
+
+function applyBatch(rows){
+  const cur = toRecords();
+  const queue = [...orphans, ...rows].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+  orphans = [];
+  let changed = false;
+  for(const r of queue){
+    if(r.updated_at && (!since || r.updated_at > since)) since = r.updated_at;
+    const k = r.kind + ':' + r.id;
+    const local = cur.get(k), lh = local ? hashOf(local.data) : undefined;
+    const rh = r.deleted ? undefined : hashOf(r.data);
+    if(lh === rh){ rh ? base[k] = rh : delete base[k]; continue; }   // already the same here
+    if(lh !== base[k]) continue;         // our own change is still uploading; it wins
+    if(!applyRecord(r)){ orphans.push(r); continue; }
+    rh ? base[k] = rh : delete base[k];
+    changed = true;
+  }
+  saveSync();
+  if(changed){
+    if(S.activeMatch && !match(S.activeMatch)) S.activeMatch = S.matches.at(-1)?.id ?? null;
+    localStorage.setItem(KEY, JSON.stringify(S));
+    renderSoon();
+  }
+}
+
+/* local changes not yet on the server, parents before children */
+function diff(){
+  const cur = toRecords(), rows = [];
+  for(const [k, r] of cur){ const h = hashOf(r.data); if(base[k] !== h) rows.push({...r, deleted: false, h}); }
+  for(const k of Object.keys(base)) if(!cur.has(k)){
+    const i = k.indexOf(':');
+    rows.push({kind: k.slice(0, i), id: k.slice(i + 1), data: {}, deleted: true});
+  }
+  return rows.sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
+}
+
+let pushTimer = null, pushing = false, pushAgain = false, retryTimer = null;
+function schedulePush(){
+  if(!sync.live) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(push, 400);
+}
+async function push(){
+  if(!sync.live) return;
+  if(pushing){ pushAgain = true; return; }
+  pushing = true; clearTimeout(retryTimer);
+  try{
+    do{
+      pushAgain = false;
+      const rows = diff();
+      sync.pending = rows.length;
+      if(!rows.length) break;
+      if(!navigator.onLine){ setStatus('offline'); return; }
+      setStatus('pending');
+      for(let i = 0; i < rows.length; i += 500){
+        const chunk = rows.slice(i, i + 500);
+        const {error} = await sb.from('records')
+          .upsert(chunk.map(({h, ...row}) => row), {onConflict: 'kind,id'});
+        if(error) throw error;
+        for(const row of chunk){
+          const k = row.kind + ':' + row.id;
+          row.deleted ? delete base[k] : base[k] = row.h;
+        }
+        saveSync();
+      }
+    }while(pushAgain);
+    sync.pending = diff().length;
+    setStatus(sync.pending ? 'pending' : 'synced');
+  }catch(e){
+    console.warn('sync upload failed', e);
+    sync.connected = false;
+    setStatus(navigator.onLine ? 'error' : 'offline', e.message);
+    retryTimer = setTimeout(connect, 10000);
+  }finally{ pushing = false; }
+}
+
+async function pullSince(){
+  const all = [];
+  for(let from = 0; ; from += 1000){
+    let q = sb.from('records').select('kind,id,data,deleted,updated_at')
+      .order('updated_at').order('kind').order('id').range(from, from + 999);
+    if(since) q = q.gte('updated_at', since);
+    const {data, error} = await q;
+    if(error) throw error;
+    all.push(...data);
+    if(data.length < 1000) return all;
+  }
+}
+
+/* live updates arrive one row at a time; apply them in small batches */
+let liveBuf = [], liveTimer = null;
+function subscribe(){
+  if(channel) sb.removeChannel(channel);
+  channel = sb.channel('records-live')
+    .on('postgres_changes', {event: '*', schema: 'public', table: 'records'}, p => {
+      if(!p.new?.kind) return;
+      liveBuf.push(p.new);
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(() => { const rows = liveBuf; liveBuf = []; applyBatch(rows); }, 150);
+    })
+    .subscribe(status => {
+      if(status === 'SUBSCRIBED') catchUp();
+      else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        sync.connected = false; setStatus(navigator.onLine ? 'error' : 'offline');
+      }
+    });
+}
+/* (Re)establish contact: still on the list? -> fetch what changed -> listen
+   live -> upload what's waiting. Any failure retries every 10 s, and again as
+   soon as the device comes back online or the app is brought to the front. */
+let connecting = false;
+async function connect(){
+  if(!sync.live || connecting) return;
+  connecting = true; clearTimeout(retryTimer);
+  try{
+    sync.pending = diff().length;
+    setStatus('connecting');
+    const {data: member, error} = await sb.rpc('is_member');
+    if(error) throw error;
+    if(!member) return removedFromList();
+    applyBatch(await pullSince());
+    sync.connected = true;
+    subscribe();
+    await push();
+  }catch(e){
+    console.warn('sync connect failed', e);
+    sync.connected = false;
+    setStatus(navigator.onLine ? 'error' : 'offline', e.message);
+    retryTimer = setTimeout(connect, 10000);
+  }finally{ connecting = false; }
+}
+async function catchUp(){
+  if(!sync.live) return;
+  if(!sync.connected) return connect();
+  try{ applyBatch(await pullSince()); await push(); }
+  catch(e){ console.warn('sync catch-up failed', e); sync.connected = false; connect(); }
+}
+addEventListener('online', catchUp);
+addEventListener('offline', () => sync.live && setStatus('offline'));
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') catchUp(); });
+
+function client(){
+  if(!window.supabase) throw new Error('The sync library did not load.');
+  return sb ??= window.supabase.createClient(SB.url, SB.key, {
+    auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: AUTH_KEY}});
+}
+
+async function startSync(session){
+  sync.email = session.user.email; sync.error = null;
+  setStatus('connecting');
+  const {data: member, error} = await sb.rpc('is_member');
+  if(error) throw error;
+  if(!member){
+    await sb.auth.signOut().catch(() => {});
+    sync.error = `${sync.email} isn't on this team's list. Ask the owner to add it.`;
+    sync.email = null; setStatus('off'); return render();
+  }
+  loadSync();
+  const firstTime = !since && !Object.keys(base).length;
+  const rows = await pullSince();
+  if(firstTime && (S.teams.length || S.matches.length)){
+    const choice = await chooseFirstSync(rows.filter(r => !r.deleted).length);
+    if(choice === 'cancel'){ await sb.auth.signOut().catch(() => {}); sync.email = null; setStatus('off'); return render(); }
+    if(choice === 'discard'){ S.teams = []; S.matches = []; S.activeMatch = null; }
+  }
+  ensureStamps();
+  sync.live = true;
+  applyBatch(rows);
+  render();
+  await connect();
+}
+
+/* On launch: a saved sign-in counts straight away, even with no signal at the
+   gym — taps are kept as waiting changes and connect() keeps trying. */
+async function resumeSync(){
+  if(!localStorage.getItem(AUTH_KEY)) return;   // never signed in here: stay fully local
+  try{
+    const {data} = await client().auth.getSession();   // read from this device, no network
+    if(!data.session) return;
+    sync.email = data.session.user.email;
+    loadSync();
+    sync.live = true;
+    sync.pending = diff().length;
+    render();
+    connect();
+  }catch(e){ console.warn('sync resume failed', e); setStatus(navigator.onLine ? 'error' : 'offline', e.message); }
+}
+
+/* the owner took this email off the list: stop, and don't keep their copy */
+async function removedFromList(){
+  sync.live = false; sync.connected = false;
+  if(channel){ sb.removeChannel(channel); channel = null; }
+  await sb.auth.signOut().catch(() => {});
+  base = {}; since = null; orphans = []; localStorage.removeItem(SYNC_KEY);
+  S.teams = []; S.matches = []; S.activeMatch = null;
+  localStorage.setItem(KEY, JSON.stringify(S));
+  sync.error = `${sync.email} is no longer on this team's list, so this device's copy was removed.`;
+  sync.email = null; setStatus('off'); render();
+}
+
+async function signInFromForm(){
+  const email = app.querySelector('#sbEmail')?.value.trim().toLowerCase();
+  const password = app.querySelector('#sbPass')?.value;
+  if(!email || !password) return toast('Enter your email and password');
+  sync.error = null; setStatus('connecting'); render();
+  try{
+    const {data, error} = await client().auth.signInWithPassword({email, password});
+    if(error) throw error;
+    await startSync(data.session);
+  }catch(e){
+    sync.error = /invalid login/i.test(e.message) ? 'Wrong email or password.' : e.message;
+    sync.email = null; setStatus('off'); render();
+  }
+}
+
+async function signOut(){
+  const waiting = sync.live ? diff().length : 0;
+  if(!confirm(waiting
+      ? `${waiting} change${waiting === 1 ? '' : 's'} haven't uploaded yet and will be lost. Sign out anyway?`
+      : "Sign out? This device's copy of the shared data is cleared; everything stays in the shared data.")) return;
+  sync.live = false; sync.connected = false; clearTimeout(retryTimer);
+  if(channel){ sb.removeChannel(channel); channel = null; }
+  await sb?.auth.signOut().catch(() => {});
+  base = {}; since = null; orphans = []; localStorage.removeItem(SYNC_KEY);
+  S.teams = []; S.matches = []; S.activeMatch = null;
+  localStorage.setItem(KEY, JSON.stringify(S));
+  sync.email = null; setStatus('off'); render(); toast('Signed out');
+}
+
+/* first sign-in on a device that already has data: ask what to do with it */
+let dialog = null;
+function chooseFirstSync(sharedCount){
+  return new Promise(resolve => {
+    dialog = {resolve};
+    const nm = S.matches.length, nt = S.teams.length;
+    sheet.innerHTML = `
+      <div class="hd"><h2>This device already has data</h2></div>
+      <p class="psum" style="margin:0 0 10px">${nm} match${nm === 1 ? '' : 'es'} and ${nt} team${nt === 1 ? '' : 's'}
+        are saved on this device only. The shared data has ${sharedCount} record${sharedCount === 1 ? '' : 's'}.</p>
+      <div class="list">
+        <button class="btn primary" data-choice="upload" style="min-height:44px">Add this device's data to the shared data</button>
+        <button class="btn" data-choice="discard" style="min-height:44px">Use only the shared data (clears this device's copy)</button>
+        <button class="btn" data-choice="cancel" style="min-height:44px">Cancel — don't sign in</button>
+      </div>
+      <div class="hint">Test or practice data? Choose "Use only the shared data" so it doesn't reach your assistants.</div>`;
+    modal.hidden = false;
+  });
+}
+function closeDialog(choice){
+  const d = dialog; dialog = null; modal.hidden = true; d?.resolve(choice);
+}
+
+function setStatus(status, err){
+  sync.status = status;
+  if(err) sync.error = err;
+  const pill = document.getElementById('syncpill');
+  if(pill){
+    pill.hidden = status === 'off';
+    pill.className = 'syncpill ' + status;
+    pill.textContent = statusText();
+  }
+  const line = app.querySelector('[data-syncline]');
+  if(line) line.textContent = statusText();
+}
+function statusText(){
+  const n = sync.pending, w = `${n} change${n === 1 ? '' : 's'} waiting`;
+  return ({connecting: n ? `Connecting · ${w}` : 'Connecting…',
+           synced: 'Synced',
+           pending: n ? `Uploading ${n} change${n === 1 ? '' : 's'}…` : 'Synced',
+           offline: n ? `Offline · ${w}` : 'Offline',
+           error: n ? `Can't reach server · ${w}` : "Can't reach server — retrying",
+           off: ''})[sync.status] ?? '';
+}
+document.getElementById('syncpill').onclick = () => {
+  view = 'matches';
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'matches'));
+  render();
+};
+
+/* never re-render under someone's cursor: a live update while they type a
+   player name would wipe the field. Catch up when they leave it. */
+let renderWaiting = false;
+function renderSoon(){
+  const a = document.activeElement;
+  if(a && app.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)){
+    if(!renderWaiting){ renderWaiting = true; a.addEventListener('blur', () => { renderWaiting = false; render(); }, {once: true}); }
+    return;
+  }
+  render();
+}
+
+/* Import while signed in: add, never remove — a file must not be able to
+   wipe the shared data for everyone. */
+function mergeImport(d){
+  for(const t of d.teams){
+    const have = team(t.id);
+    if(!have){ S.teams.push(t); continue; }
+    for(const p of t.players) if(!have.players.some(x => x.id === p.id)) have.players.push(p);
+  }
+  for(const m of d.matches){
+    const have = match(m.id);
+    if(!have){ S.matches.push(m); continue; }
+    for(const ev of m.events) if(!have.events.some(x => x.id === ev.id)) have.events.push(ev);
+  }
+}
+
+function sharedPanel(){
+  if(sync.live || sync.status === 'connecting' && sync.email){
+    return `<div class="panel">
+      <h2>Shared data</h2>
+      <div class="row">
+        <div><div class="ttl" style="font-weight:700">Signed in as ${esc(sync.email)}</div>
+          <div class="sub" style="color:var(--dim);font-size:12px" data-syncline>${esc(statusText())}</div></div>
+        <div class="spacer"></div>
+        <button class="btn" data-signout>Sign out</button>
+      </div>
+      <div class="hint">Teams, matches and stats sync live with everyone on the team's list, and keep
+        working offline — changes upload when the connection is back. Filters, and which match
+        you're recording, stay on this device.</div>
+    </div>`;
+  }
+  return `<div class="panel">
+    <h2>Shared data</h2>
+    <div class="row">
+      <input type="email" id="sbEmail" placeholder="Email" autocomplete="username" autocapitalize="none"
+        spellcheck="false" style="flex:1;min-width:180px">
+      <input type="password" id="sbPass" placeholder="Password" autocomplete="current-password" style="flex:1;min-width:150px">
+      <button class="btn primary" data-signin ${sync.status === 'connecting' ? 'disabled' : ''}>
+        ${sync.status === 'connecting' ? 'Signing in…' : 'Sign in'}</button>
+    </div>
+    ${sync.error ? `<div class="hint" style="color:var(--bad)">${esc(sync.error)}</div>` : ''}
+    <div class="hint">Optional. Sign in to share teams, matches and stats live with the rest of the
+      coaching staff. Only accounts the owner has created can sign in. Without signing in,
+      everything stays on this device.</div>
+  </div>`;
+}
+
 /* ---------- offline support ----------
    Service workers only register from a secure context, so this is a no-op
    when the file is opened directly from disk (file://) — which is exactly
@@ -1699,6 +2213,7 @@ if('serviceWorker' in navigator &&
 /* ---------- boot ---------- */
 if(!S.activeMatch && S.matches.length) S.activeMatch = S.matches.at(-1).id;
 render();
+resumeSync();
 </script>
 </body>
 </html>
