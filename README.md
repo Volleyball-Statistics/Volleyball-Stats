@@ -98,7 +98,11 @@ where it landed:
    (OH → Left, MB → Middle, OPP → Right), so usually you skip straight to step 3.
    Left/right are the *hitter's*, so their left side appears on the right of the drawing,
    as you see it across the net.
-3. **Tap where it landed** on the court. That records the attack and closes the popup.
+3. **Middle set type (optional).** When the take-off is Middle, a **30 / 51 / 60** row
+   appears (`3` / `5` / `6` on the keyboard). It isn't remembered between attacks, since a
+   middle's set changes play to play. Leave it blank and the attack still counts. The list is
+   `MIDDLE_PLAYS` in `index.html`.
+4. **Tap where it landed** on the court. That records the attack and closes the popup.
 
 **Skip location** still records the attack, just without a spot. **Cancel** (or `Esc`, or
 tapping outside) records nothing. Only in-court landings can be tapped — skip for balls
@@ -126,7 +130,9 @@ everything inside the 3 m line.
 **Reading it.** The Box Score gets an *attack placement* panel per team: pick a player (or
 all), filter to hits or tips, and you get the shot chart (with an **All attacks / Kills
 only** switch) beside the zone grid, where each zone shows attacks, kills and hitting % for
-that selection. "Kills only" filters the shot chart, not the zone counts. Cell shading is a single-hue ramp on attack volume — the count is printed in
+that selection. "Kills only" filters the shot chart, not the zone counts. Once any middle
+attack has a set type, a **Middle attacks by set** table shows attacks, kills, errors and
+hitting % per type, with untyped middle attacks on their own row. Cell shading is a single-hue ramp on attack volume — the count is printed in
 every cell too, so it reads fine in greyscale. **Export CSV** gives long format, one row per
 player × shot × zone, easy to pivot.
 

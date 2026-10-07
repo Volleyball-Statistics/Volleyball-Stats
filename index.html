@@ -243,6 +243,9 @@
     .sheet .hd .x{width:44px;height:44px}
   }
 
+  /* small numeric tables: no name column, so every count right-aligns */
+  table.mini{min-width:0}
+  table.mini th:nth-child(2),table.mini td:nth-child(2){text-align:right}
   .pgrid2{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:16px;align-items:start}
   @media(max-width:700px){.pgrid2{grid-template-columns:1fr;gap:11px}}
   .psum p{margin:0 0 9px;font-size:13px;color:var(--muted)}
@@ -422,6 +425,9 @@ const SHOT_LABEL   = Object.fromEntries(SHOTS);
 const FROMS      = [['L','Left'],['M','Middle'],['R','Right'],['B','Back row']];
 const FROM_LABEL = Object.fromEntries(FROMS);
 const FROM_BY_POS = {OH:'L', MB:'M', OPP:'R'};
+/* Set type for an attack from the middle. Optional, and only offered when the
+   take-off is Middle. Edit this list to match your team's play calls. */
+const MIDDLE_PLAYS = ['30','51','60'];
 
 /* Court geometry for the shot chart, in SVG units (10 per metre).
    The landing half is 9 m x 9 m with the net along y=0 and the 3 m line at
@@ -606,7 +612,7 @@ function shotSvg(events, {pick=null}={}){
     const miss = kill ? '' : 'miss';
     const p = ev.playerId ? player(ev.playerId) : null;
     const title = [p ? pFull(p) : 'Team', STAT_LABEL[ev.stat], tip ? 'tip' : 'hit',
-                   ev.from ? 'from ' + FROM_LABEL[ev.from].toLowerCase() : null,
+                   ev.from ? 'from ' + FROM_LABEL[ev.from].toLowerCase() : null, ev.play,
                    'zone ' + zoneAt(x, y), 'set ' + ev.set].filter(Boolean).join(' · ');
     // inline style: the .end CSS would otherwise beat SVG presentation attributes
     const paint = kill ? `fill:${col}` : `stroke:${col}`;
@@ -770,7 +776,7 @@ function vMatch(){
       <span class="badge">${esc(teamName(ev.teamId).slice(0,14))}</span>
       <span>${p ? esc(pFull(p)) : 'Team'}</span>
       <span class="s ${st.tone==='good'?'pos':st.tone==='bad'?'neg':''}">${st.label}</span>
-      ${ev.from ? `<span class="zchip">${FROM_LABEL[ev.from].toLowerCase()}</span>` : ''}
+      ${ev.from ? `<span class="zchip">${FROM_LABEL[ev.from].toLowerCase()}${ev.play ? ' ' + ev.play : ''}</span>` : ''}
       ${ev.zone ? `<span class="zchip">Z${ev.zone}</span>` : ''}
       ${ev.shot === 'tip' ? `<span class="zchip">tip</span>` : ''}
       <span class="t">S${ev.set}</span>
@@ -928,6 +934,7 @@ function placePanel(m, teamId, f){
   const killsOnly = !!S.ui.placeKills;
   const shots = shotEvents(m, teamId, {...f, playerId: who||null, shot: shot||null, killsOnly});
   const noLine = shots.filter(ev => !ev.from).length;
+  const mid = middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null});
 
   return `
   <div class="panel">
@@ -976,6 +983,7 @@ function placePanel(m, teamId, f){
           ? `<p class="warn">${unplaced.att} attack${unplaced.att===1?'':'s'} recorded without a
                location — not shown on the court.</p>`
           : ''}
+        ${mid}
         <p class="fine">Zones are the positions of the team being attacked, net at top:
           4-3-2 front row (inside the 3 m line), 5-6-1 back row. Each cell shows attacks, then kills
           and hitting %. The shot chart draws each located attack from where the hitter took off —
@@ -984,6 +992,31 @@ function placePanel(m, teamId, f){
       </div>
     </div>
   </div>`;
+}
+
+/* Middle attacks by set type. Counts every middle attack under the panel's
+   filters, located or not, so an untyped or skipped swing is never dropped. */
+function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}){
+  const rows = {};
+  for(const ev of m.events){
+    if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat) || ev.from !== 'M') continue;
+    if(set && ev.set !== set) continue;
+    if(playerId && (ev.playerId ?? 'TEAM') !== playerId) continue;
+    if(shot && (ev.shot || 'hit') !== shot) continue;
+    const c = rows[ev.play || ''] ??= {att:0, kill:0, err:0};
+    c.att++;
+    if(ev.stat === 'kill') c.kill++;
+    else if(ev.stat === 'attackErr') c.err++;
+  }
+  if(!MIDDLE_PLAYS.some(k => rows[k])) return '';   // nobody has tagged a type yet
+  const line = (k, label) => rows[k] ? `<tr><td>${label}</td><td class="num">${rows[k].att}</td>
+    <td class="num">${rows[k].kill}</td><td class="num">${rows[k].err}</td>
+    <td class="num ${zoneHit(rows[k])>=0?'pos':'neg'}">${pct3(zoneHit(rows[k]))}</td></tr>` : '';
+  return `<h3 style="margin-top:12px">Middle attacks by set</h3>
+    <div class="tw" style="max-width:300px;margin-bottom:10px"><table class="mini">
+      <thead><tr><th>Set</th><th>Att</th><th>K</th><th>E</th><th>Hit%</th></tr></thead>
+      <tbody>${MIDDLE_PLAYS.map(k => line(k, k)).join('')}${line('', '<span style="color:var(--dim)">no type</span>')}</tbody>
+    </table></div>`;
 }
 
 function teamBox(m, teamId, f){
@@ -1293,7 +1326,7 @@ function requestStat(stat){
   else addStat(stat);
 }
 
-/* loc = {shot, from, x, y} from the popup; x/y absent when skipped */
+/* loc = {shot, from, play, x, y} from the popup; x/y absent when skipped */
 function addStat(stat, loc=null){
   const s = selection(); if(!s) return;
   const {m, teamId, sel} = s;
@@ -1305,11 +1338,12 @@ function addStat(stat, loc=null){
   if(ATTACK_STATS.has(stat)){
     ev.shot = loc?.shot || 'hit';
     if(loc?.from) ev.from = loc.from;
+    if(loc?.play && ev.from === 'M') ev.play = loc.play;
     if(loc?.x != null){
       ev.x = loc.x; ev.y = loc.y; ev.zone = zoneAt(loc.x, loc.y);
       note = ` → zone ${ev.zone}`;
     }
-    note += ` (${SHOT_LABEL[ev.shot].toLowerCase()})`;
+    note += ` (${ev.play ? ev.play + ' ' : ''}${SHOT_LABEL[ev.shot].toLowerCase()})`;
   }
   m.events.push(ev);
   save(); render();
@@ -1320,18 +1354,20 @@ function addStat(stat, loc=null){
    Opens on every attack. The hitter's take-off spot is remembered per player
    (an outside hitter keeps swinging from the left), so the usual case is one
    tap on the landing spot. Skip still records the attack, just unlocated. */
-let pop = null;   // {stat, sel, shot, from} while the popup is open
+let pop = null;   // {stat, sel, shot, from, play} while the popup is open
 const modal = document.getElementById('placeModal');
 const sheet = document.getElementById('placeSheet');
 
 function openPlace(stat, sel){
   const p = sel === 'TEAM' ? null : player(sel);
-  pop = {stat, sel, shot:'hit',
+  pop = {stat, sel, shot:'hit', play:null,
          from: S.ui['from_'+sel] ?? FROM_BY_POS[p?.pos] ?? null};
   renderPop();
   modal.hidden = false;
 }
 function closePlace(){ pop = null; modal.hidden = true; }
+/* a set type only means something from the middle, so leaving it drops the type */
+function setFrom(f){ pop.from = f; if(f !== 'M') pop.play = null; }
 
 function renderPop(){
   const p = pop.sel === 'TEAM' ? null : player(pop.sel);
@@ -1348,6 +1384,12 @@ function renderPop(){
       </div>
       <span class="fine">${pop.from ? 'Tap where it landed' : 'Pick where they hit from, then tap where it landed'}</span>
     </div>
+    ${pop.from === 'M' ? `<div class="ctl">
+      <div class="shotsel">
+        ${MIDDLE_PLAYS.map(k => `<button class="${pop.play===k?'on':''}" data-pplay="${k}">${k}</button>`).join('')}
+      </div>
+      <span class="fine">Middle set type <span style="font-weight:600">(optional)</span></span>
+    </div>` : ''}
     ${shotSvg([], {pick: pop})}
     <div class="ft">
       <button class="btn" data-pskip>Skip location</button>
@@ -1358,13 +1400,14 @@ function renderPop(){
 modal.addEventListener('click', e => {
   if(!pop) return;
   if(e.target === modal) return closePlace();          // tap outside the sheet
-  const t = e.target.closest('[data-pshot],[data-from],[data-land],[data-pskip],[data-pclose]');
+  const t = e.target.closest('[data-pshot],[data-pplay],[data-from],[data-land],[data-pskip],[data-pclose]');
   if(!t) return;
   if(t.dataset.pclose !== undefined) return closePlace();
   if(t.dataset.pshot){ pop.shot = t.dataset.pshot; return renderPop(); }
-  if(t.dataset.from){ pop.from = pop.from === t.dataset.from ? null : t.dataset.from; return renderPop(); }
-  const {stat, sel, shot, from} = pop;
-  const loc = {shot, from};
+  if(t.dataset.pplay){ pop.play = pop.play === t.dataset.pplay ? null : t.dataset.pplay; return renderPop(); }
+  if(t.dataset.from){ setFrom(pop.from === t.dataset.from ? null : t.dataset.from); return renderPop(); }
+  const {stat, sel, shot, from, play} = pop;
+  const loc = {shot, from, play};
   if(t.dataset.land !== undefined){
     const svg = t.ownerSVGElement;
     const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
@@ -1392,7 +1435,9 @@ document.addEventListener('keydown', e => {
     if(k === 'escape'){ e.preventDefault(); return closePlace(); }
     if(k === 'h' || k === 't'){ pop.shot = k === 't' ? 'tip' : 'hit'; renderPop(); }
     const f = {l:'L', m:'M', r:'R', b:'B'}[k];
-    if(f){ pop.from = f; renderPop(); }
+    if(f){ setFrom(f); renderPop(); }
+    const play = pop.from === 'M' && MIDDLE_PLAYS.find(p => p[0] === k);
+    if(play){ pop.play = pop.play === play ? null : play; renderPop(); }
     return;
   }
   if(view !== 'match') return;
