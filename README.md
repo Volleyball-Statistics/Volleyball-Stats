@@ -132,7 +132,10 @@ all), filter to hits or tips, and you get the shot chart (with an **All attacks 
 only** switch) beside the zone grid, where each zone shows attacks, kills and hitting % for
 that selection. "Kills only" filters the shot chart, not the zone counts. Once any middle
 attack has a set type, a **Middle attacks by set** table shows attacks, kills, errors and
-hitting % per type, with untyped middle attacks on their own row. Cell shading is a single-hue ramp on attack volume — the count is printed in
+hitting % per type, with untyped middle attacks on their own row. The **Any set / 30 / 51 /
+60** buttons then filter the whole panel (shot chart, zone grid and summary) to one set type,
+and combine with the player and Hit/Tip filters. The by-set table ignores that filter so you
+can still compare types; it highlights the selected one instead. Cell shading is a single-hue ramp on attack volume — the count is printed in
 every cell too, so it reads fine in greyscale. **Export CSV** gives long format, one row per
 player × shot × zone, easy to pivot.
 

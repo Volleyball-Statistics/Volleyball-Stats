@@ -515,13 +515,14 @@ const errors     = r => r.attackErr + r.serveErr + r.recErr + r.setErr + r.block
 /* Attacks broken out by landing zone. Returns per-zone tallies plus the
    attacks that were recorded without a location, which must stay visible —
    otherwise the court silently under-reports and looks authoritative. */
-function placement(m, teamId, {playerId=null, shot=null, set=null}={}){
+function placement(m, teamId, {playerId=null, shot=null, set=null, play=null}={}){
   const grid = {}, unplaced = {att:0, kill:0, err:0};
   for(const ev of m.events){
     if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat)) continue;
     if(set && ev.set !== set) continue;
     if(playerId && (ev.playerId ?? 'TEAM') !== playerId) continue;
     if(shot && (ev.shot || 'hit') !== shot) continue;
+    if(play && ev.play !== play) continue;
     const c = ev.zone ? (grid[ev.zone] ??= {att:0, kill:0, err:0}) : unplaced;
     c.att++;
     if(ev.stat === 'kill') c.kill++;
@@ -654,12 +655,13 @@ function shotLegend(){
 }
 
 /* the located attacks a shot chart draws, under the usual placement filters */
-function shotEvents(m, teamId, {playerId=null, shot=null, set=null, killsOnly=false}={}){
+function shotEvents(m, teamId, {playerId=null, shot=null, set=null, play=null, killsOnly=false}={}){
   return m.events.filter(ev =>
     ev.teamId === teamId && ATTACK_STATS.has(ev.stat) && landing(ev)
     && (!set || ev.set === set)
     && (!playerId || (ev.playerId ?? 'TEAM') === playerId)
     && (!shot || (ev.shot || 'hit') === shot)
+    && (!play || ev.play === play)
     && (!killsOnly || ev.stat === 'kill'));
 }
 
@@ -919,10 +921,15 @@ function placePanel(m, teamId, f){
   const t = team(teamId);
   const who  = S.ui['place_'+teamId] ?? '';
   const shot = S.ui.placeShot ?? '';
-  const {grid, unplaced} = placement(m, teamId, {...f, playerId: who||null, shot: shot||null});
+  /* set-type filter: offered once this team has a typed middle attack, and kept
+     visible while active so an empty result can always be switched back */
+  const play = S.ui.placePlay ?? '';
+  const typed = m.events.some(ev => ev.teamId === teamId && ev.play);
+  const filt = {...f, playerId: who||null, shot: shot||null, play: play||null};
+  const {grid, unplaced} = placement(m, teamId, filt);
 
   const located = Object.values(grid).reduce((n,c)=>n+c.att, 0);
-  if(!located && !unplaced.att) return '';   // nothing to show yet
+  if(!located && !unplaced.att && !play) return '';   // nothing to show yet
 
   const max = Math.max(0, ...ZONE_ORDER.map(z=>grid[z]?.att ?? 0));
   const best = ZONE_ORDER
@@ -932,9 +939,9 @@ function placePanel(m, teamId, f){
     ? (who==='TEAM' ? 'Team / unassigned' : pFull(player(who)))
     : 'All players';
   const killsOnly = !!S.ui.placeKills;
-  const shots = shotEvents(m, teamId, {...f, playerId: who||null, shot: shot||null, killsOnly});
+  const shots = shotEvents(m, teamId, {...filt, killsOnly});
   const noLine = shots.filter(ev => !ev.from).length;
-  const mid = middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null});
+  const mid = middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null}, play);
 
   return `
   <div class="panel">
@@ -950,6 +957,10 @@ function placePanel(m, teamId, f){
         ${[['','All'],...SHOTS].map(([k,l])=>`
           <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
       </div>
+      ${typed || play ? `<div class="setpills" style="margin:0;grid-column:auto" title="Middle set type">
+        ${['', ...MIDDLE_PLAYS].map(k => `
+          <button class="${play===k?'on':''}" data-placeplay="${k}">${k || 'Any set'}</button>`).join('')}
+      </div>` : ''}
       <button class="btn sm" data-placecsv>Export CSV</button>
     </div>
     <div class="pgrid2">
@@ -973,7 +984,7 @@ function placePanel(m, teamId, f){
           ${courtHtml(grid, {detail:true})}
           ${courtScale(max)}
         </div>
-        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
+        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · ${play}s only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
         ${located
           ? `<p>${located} located attack${located===1?'':'s'}.
                Most often <b>zone ${best.z}</b> — ${best.att} time${best.att===1?'':'s'},
@@ -995,8 +1006,10 @@ function placePanel(m, teamId, f){
 }
 
 /* Middle attacks by set type. Counts every middle attack under the panel's
-   filters, located or not, so an untyped or skipped swing is never dropped. */
-function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}){
+   filters, located or not, so an untyped or skipped swing is never dropped.
+   Ignores the set-type filter on purpose — it's the comparison across types —
+   and highlights the selected row instead. */
+function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}, active=''){
   const rows = {};
   for(const ev of m.events){
     if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat) || ev.from !== 'M') continue;
@@ -1009,7 +1022,7 @@ function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}){
     else if(ev.stat === 'attackErr') c.err++;
   }
   if(!MIDDLE_PLAYS.some(k => rows[k])) return '';   // nobody has tagged a type yet
-  const line = (k, label) => rows[k] ? `<tr><td>${label}</td><td class="num">${rows[k].att}</td>
+  const line = (k, label) => rows[k] ? `<tr ${active && k===active ? 'class="tot"' : ''}><td>${label}</td><td class="num">${rows[k].att}</td>
     <td class="num">${rows[k].kill}</td><td class="num">${rows[k].err}</td>
     <td class="num ${zoneHit(rows[k])>=0?'pos':'neg'}">${pct3(zoneHit(rows[k]))}</td></tr>` : '';
   return `<h3 style="margin-top:12px">Middle attacks by set</h3>
@@ -1192,6 +1205,7 @@ function wire(){
     S.ui['place_'+e.target.dataset.placeplayer] = e.target.value; save(); render();
   });
   on('[data-placeshot]','click', e => { S.ui.placeShot = e.currentTarget.dataset.placeshot; save(); render(); });
+  on('[data-placeplay]','click', e => { S.ui.placePlay = e.currentTarget.dataset.placeplay; save(); render(); });
   on('[data-placekills]','click', e => { S.ui.placeKills = e.currentTarget.dataset.placekills === '1'; save(); render(); });
   on('[data-placecsv]','click', exportPlacementCsv);
   on('[data-stat]','click', e => requestStat(e.currentTarget.dataset.stat));
