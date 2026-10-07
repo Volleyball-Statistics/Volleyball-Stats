@@ -5,11 +5,11 @@ Your stats never leave the device they were entered on.
 
 **On the Mac:** double-click `index.html`.
 
-**On the iPhone:** <https://wghackl.github.io/Volleyball-Stats/> → Share → Add to Home Screen.
+**On the iPhone:** <https://volleyball-statistics.github.io/Volleyball-Stats/> → Share → Add to Home Screen.
 
 ## Installing on the iPhone
 
-1. Open <https://wghackl.github.io/Volleyball-Stats/> in **Safari** (must be Safari — Chrome
+1. Open <https://volleyball-statistics.github.io/Volleyball-Stats/> in **Safari** (must be Safari — Chrome
    on iOS can't install home-screen apps).
 2. Tap the **Share** button, scroll down, tap **Add to Home Screen**, then **Add**.
 3. Launch it from the icon at least once while still on Wi-Fi. That first launch lets the
@@ -18,6 +18,11 @@ Your stats never leave the device they were entered on.
 
 After step 3 it never needs the network again. The page is loaded from cache, and there is
 no server to talk to — the site hosts a program, not your data.
+
+> **Installed before 2026-10-07?** The app moved from `wghackl.github.io` to the address
+> above, and the old one no longer loads or updates. Saved stats belong to the address they
+> were entered at, so on the old install use **Matches → Export all data (JSON)**, then
+> install from the new address and **Import JSON**.
 
 ### What is and isn't on the internet
 
