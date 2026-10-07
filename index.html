@@ -224,6 +224,13 @@
   .shots .tapzone{cursor:crosshair}
   /* court lines sit above the tap surface; let taps fall through them */
   .shots .ln,.shots .bound,.shots .netl,.shots .sidel{pointer-events:none}
+  /* a filter group names itself, so a row of pills never has to be decoded */
+  .fgroup{display:flex;align-items:center;gap:6px}
+  .flabel{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);white-space:nowrap}
+  table.mini tr[data-placeplay]{cursor:pointer}
+  table.mini tr[data-placeplay]:hover{background:rgba(77,163,255,.08)}
+  table.mini tr.sel{background:rgba(77,163,255,.16);font-weight:800}
+  table.mini tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   .slegend{display:flex;flex-wrap:wrap;gap:4px 13px;margin-top:7px;font-size:11px;color:var(--muted);font-weight:600;align-items:center}
   .slegend svg{width:22px;height:10px;vertical-align:middle;margin-right:4px}
 
@@ -250,7 +257,8 @@
     .modal{align-items:flex-end;padding:0}
     .sheet{border-radius:16px 16px 0 0;padding-bottom:calc(13px + env(safe-area-inset-bottom))}
     /* 44px minimum touch target, like every other control on the phone layout */
-    .sheet .shotsel button{min-height:44px;padding:6px 14px;font-size:13px}
+    .sheet .shotsel button{min-height:44px;padding:6px 12px;font-size:13px}
+    .sheet .ctl{gap:7px}
     .sheet .hd .x{width:44px;height:44px}
   }
 
@@ -985,20 +993,24 @@ function placePanel(m, teamId, f){
         ${t.players.map(p=>`<option value="${p.id}" ${who===p.id?'selected':''}>${esc(pFull(p))}</option>`).join('')}
         <option value="TEAM" ${who==='TEAM'?'selected':''}>Team / unassigned</option>
       </select>
-      <div class="setpills" style="margin:0;grid-column:auto">
-        ${[['','All'],...SHOTS].map(([k,l])=>`
-          <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
+      <div class="fgroup"><span class="flabel">Shot</span>
+        <div class="setpills" style="margin:0;grid-column:auto">
+          ${[['','All'],...SHOTS].map(([k,l])=>`
+            <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
+        </div>
       </div>
-      ${typed || play ? `<div class="setpills" style="margin:0;grid-column:auto" title="Middle set type">
-        ${['', ...MIDDLE_PLAYS].map(k => `
-          <button class="${play===k?'on':''}" data-placeplay="${k}">${k || 'Any set'}</button>`).join('')}
+      ${typed || play ? `<div class="fgroup"><span class="flabel">Middle set</span>
+        <div class="setpills" style="margin:0;grid-column:auto">
+          ${['', ...MIDDLE_PLAYS].map(k => `
+            <button class="${play===k?'on':''}" data-placeplay="${k}">${k || 'All'}</button>`).join('')}
+        </div>
       </div>` : ''}
       <button class="btn sm" data-placecsv>Export CSV</button>
     </div>
     <div class="pgrid2">
       <div>
         <div class="row" style="margin-bottom:7px">
-          <h3 style="margin:0">Shot chart</h3>
+          <h3 style="margin:0">Shot chart${play ? ` <span class="zchip" style="text-transform:none">middle set ${play}</span>` : ''}</h3>
           <div class="spacer"></div>
           <div class="setpills" style="margin:0;grid-column:auto">
             <button class="${killsOnly?'':'on'}" data-placekills="0">All attacks</button>
@@ -1016,7 +1028,7 @@ function placePanel(m, teamId, f){
           ${courtHtml(grid, {detail:true})}
           ${courtScale(max)}
         </div>
-        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · ${play}s only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
+        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · middle set ${play} only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
         ${located
           ? `<p>${located} located attack${located===1?'':'s'}.
                Most often <b>zone ${best.z}</b> — ${best.att} time${best.att===1?'':'s'},
@@ -1037,10 +1049,12 @@ function placePanel(m, teamId, f){
   </div>`;
 }
 
-/* Middle attacks by set type. Counts every middle attack under the panel's
-   filters, located or not, so an untyped or skipped swing is never dropped.
-   Ignores the set-type filter on purpose — it's the comparison across types —
-   and highlights the selected row instead. */
+/* Middle attacks by middle set (30 / 51 / 60). Counts every middle attack
+   under the panel's filters, located or not, so an untyped or skipped swing is
+   never dropped. Ignores the middle-set filter on purpose — it's the comparison
+   across types — and highlights the selected row instead. Rows are the filter:
+   tap one to show only that set, tap it again to clear. "Middle set" is always
+   spelled out because "set" alone reads as Set 1 / Set 2 of the match. */
 function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}, active=''){
   const rows = {};
   for(const ev of m.events){
@@ -1054,12 +1068,13 @@ function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}, active=
     else if(ev.stat === 'attackErr') c.err++;
   }
   if(!MIDDLE_PLAYS.some(k => rows[k])) return '';   // nobody has tagged a type yet
-  const line = (k, label) => rows[k] ? `<tr ${active && k===active ? 'class="tot"' : ''}><td>${label}</td><td class="num">${rows[k].att}</td>
+  const line = (k, label) => rows[k] ? `<tr ${k ? `data-placeplay="${k===active ? '' : k}" title="${k===active ? 'Show all middle sets' : 'Show only middle set ' + k}"` : ''}
+      class="${active && k===active ? 'sel' : ''}"><td>${label}</td><td class="num">${rows[k].att}</td>
     <td class="num">${rows[k].kill}</td><td class="num">${rows[k].err}</td>
     <td class="num ${zoneHit(rows[k])>=0?'pos':'neg'}">${pct3(zoneHit(rows[k]))}</td></tr>` : '';
-  return `<h3 style="margin-top:12px">Middle attacks by set</h3>
+  return `<h3 style="margin-top:12px">Middle sets <span class="fine" style="text-transform:none;letter-spacing:0">· tap a row to filter</span></h3>
     <div class="tw" style="max-width:300px;margin-bottom:10px"><table class="mini">
-      <thead><tr><th>Set</th><th>Att</th><th>K</th><th>E</th><th>Hit%</th></tr></thead>
+      <thead><tr><th style="width:auto">Middle set</th><th>Att</th><th>K</th><th>E</th><th>Hit%</th></tr></thead>
       <tbody>${MIDDLE_PLAYS.map(k => line(k, k)).join('')}${line('', '<span style="color:var(--dim)">no type</span>')}</tbody>
     </table></div>`;
 }
@@ -1458,7 +1473,7 @@ function renderPop(){
       </div>
       ${pop.from === 'M'
         /* same row as Hit/Tip, so the tallest popup (middle + dug by) still fits a phone */
-        ? `<div class="shotsel" title="Middle set type (optional)">
+        ? `<span class="flabel">Middle set</span><div class="shotsel" title="Middle set (optional)">
             ${MIDDLE_PLAYS.map(k => `<button class="${pop.play===k?'on':''}" data-pplay="${k}">${k}</button>`).join('')}
           </div>`
         : `<span class="fine">${pop.from ? 'Tap where it landed' : 'Pick where they hit from, then tap where it landed'}</span>`}

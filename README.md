@@ -140,11 +140,13 @@ everything inside the 3 m line.
 all), filter to hits or tips, and you get the shot chart (with an **All attacks / Kills
 only** switch) beside the zone grid, where each zone shows attacks, kills and hitting % for
 that selection. "Kills only" filters the shot chart, not the zone counts. Once any middle
-attack has a set type, a **Middle attacks by set** table shows attacks, kills, errors and
-hitting % per type, with untyped middle attacks on their own row. The **Any set / 30 / 51 /
-60** buttons then filter the whole panel (shot chart, zone grid and summary) to one set type,
-and combine with the player and Hit/Tip filters. The by-set table ignores that filter so you
-can still compare types; it highlights the selected one instead. Cell shading is a single-hue ramp on attack volume — the count is printed in
+attack has a middle set, a **Middle sets** table shows attacks, kills, errors and hitting %
+for 30 / 51 / 60, with untyped middle attacks on their own row. **Tap a row** (or use the
+**Middle set: All / 30 / 51 / 60** filter) to narrow the whole panel — shot chart, zone grid
+and summary — to that middle set; tap it again to clear. It combines with the player and
+Shot filters. The table itself always shows every middle set so you can compare them, with
+the selected one highlighted. The app always says "middle set" in full, because "set" on
+its own means Set 1 / Set 2 of the match. Cell shading is a single-hue ramp on attack volume — the count is printed in
 every cell too, so it reads fine in greyscale. **Export CSV** gives long format, one row per
 player × shot × zone, easy to pivot.
 
