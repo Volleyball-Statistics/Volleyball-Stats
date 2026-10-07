@@ -1,7 +1,8 @@
 # Volleyball Stats
 
-A single-file, fully local volleyball stat tracker. No backend, no accounts, no analytics.
-Your stats never leave the device they were entered on.
+A single-file volleyball stat tracker that works fully offline. No analytics. By default your
+stats never leave the device they were entered on; optionally, a small coaching staff can sign
+in to [shared data](#shared-data-optional) and record into one live copy together.
 
 **On the Mac:** double-click `index.html`.
 
@@ -24,10 +25,10 @@ no server to talk to — the site hosts a program, not your data.
 | | Where it lives |
 |---|---|
 | The app (HTML/JS/icons) | Public GitHub repo, served by GitHub Pages |
-| **Your teams, rosters, matches and stats** | **Only in your phone's local storage** |
+| **Your teams, rosters, matches and stats** | **Your phone's local storage** — and, only if you sign in to shared data, the team's Supabase project, readable only by the accounts on its list |
 
-Nothing you type is ever uploaded. The hosted copy is byte-identical for everyone and
-contains no data.
+Without signing in, nothing you type is ever uploaded. The hosted copy is byte-identical
+for everyone and contains no data.
 
 ### Updating the app
 
@@ -41,8 +42,8 @@ itself once.
 In `localStorage` (key `vbstats.v1`) — **not** in this folder, and not in the repo. Which
 means:
 
-- The Mac copy and the phone copy are **separate stores with no sync**. Same app, two sets
-  of stats. Move data between them with the JSON export.
+- Unless you sign in to shared data, the Mac copy and the phone copy are **separate stores
+  with no sync**. Same app, two sets of stats. Move data between them with the JSON export.
 - Opening `index.html` in a different browser or profile shows an empty app.
 - Clearing site data — or deleting the home-screen icon on iOS — erases the stats.
 - iOS Safari evicts `localStorage` for ordinary sites after 7 days of no visits.
@@ -51,6 +52,51 @@ means:
 
 Use **Matches → Export all data (JSON)** to back up. On a phone this is the only thing
 standing between you and losing a season.
+
+## Shared data (optional)
+
+Lets the owner and a fixed, small group (e.g. two assistants) record into one live copy.
+Every device keeps its own full copy and keeps working with no signal; changes upload when
+the connection is back, and other devices see each tap within about a second.
+
+**Who can get in.** Two locks, both controlled by the owner:
+
+1. **Sign-ups are off** in the Supabase project, so the only accounts that exist are the
+   ones the owner creates (Authentication → Users → Add user → Create new user, with
+   **Auto Confirm User** ticked). One account per person — never a shared login.
+2. **The database only answers emails on `public.allowed_emails`**, even for a signed-in
+   account. The publishable key in `index.html` is public by design and grants nothing on
+   its own. Never put the secret / `service_role` key anywhere in the app.
+
+**One-time setup** (owner): open `supabase/schema.sql`, replace the three placeholder emails
+with the real ones (lower-case), and run it in the Supabase dashboard → SQL Editor. It is
+safe to re-run.
+
+**Adding or removing someone:** add/delete their row in `allowed_emails` (Table Editor) and
+create/delete their user. Taking an email off the list blocks it on its very next request;
+the next time that device connects, its copy is wiped and it's signed out.
+
+**Forgotten password:** delete the user and create it again with a new one. Stats belong
+to the team, not to the account, so nothing is lost.
+
+**Using it.** Matches → **Shared data** → email + password → **Sign in**. A pill next to the
+app name shows *Synced*, *Uploading…*, *Offline · N changes waiting* or *Can't reach server*.
+
+- The first sign-in on a device that already has data asks whether to **add it to the
+  shared data** or **use only the shared data**. Pick the second for test or practice data.
+- **Undo** takes back *your* last tap, never one recorded on someone else's phone. To fix
+  anyone's stat, tap it in **Recent**.
+- Two people editing the *same* stat at the same moment: the last save wins. Separate
+  taps never collide.
+- Filters, which match you're recording into, and your remembered take-off spots stay on
+  each device.
+- While signed in, **Import adds** a file's teams and matches and never removes anything.
+  **Delete match** and **Erase everything** affect everyone, and say so.
+- **Sign out** clears this device's copy (everything stays in the shared data). If changes
+  are still waiting to upload, it warns first.
+
+**Free-plan notes.** A free Supabase project pauses after about a week with no activity
+(say, the off-season). Nothing is lost; un-pause it from the dashboard.
 
 ## Getting started
 

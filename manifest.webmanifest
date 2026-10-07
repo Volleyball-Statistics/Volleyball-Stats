@@ -1,7 +1,7 @@
 {
   "name": "Volleyball Stats",
   "short_name": "Volleyball",
-  "description": "Local volleyball match stat tracker. All data stays on this device.",
+  "description": "Volleyball match stat tracker. Works offline; optional shared data for a coaching staff.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
