@@ -89,7 +89,9 @@
      every panel with it. Pin it to 0 and let scroll containers scroll. */
   .tally > *{min-width:0}
   /* Box Score team switch: phones only — a desktop shows both teams stacked */
-  .boxteams{display:none;margin:11px 0 0}
+  /* .teamtabs.boxteams, not .boxteams: .teamtabs (display:flex) is declared
+     later in this sheet and would otherwise win and show it on a desktop */
+  .teamtabs.boxteams{display:none;margin:11px 0 0}
   @media(max-width:820px){.tally{grid-template-columns:1fr}}
   .teamtabs{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:8px;margin-bottom:10px}
   .teamtabs button{flex:1;padding:7px;border-radius:6px;font-weight:700;font-size:12px;color:var(--muted);
@@ -352,7 +354,7 @@
     .court{padding:6px}
     .hint .wide{display:none}
     .cats{display:none}
-    .boxteams{display:flex}
+    .teamtabs.boxteams{display:flex}
     .boxteams button{min-height:44px;font-size:13px}
     .boxside.off{display:none}
     .phonepad{display:block}
@@ -499,6 +501,9 @@ const uid = () => Math.random().toString(36).slice(2,10);
 const team    = id => S.teams.find(t=>t.id===id);
 const match   = id => S.matches.find(m=>m.id===id);
 const current = () => match(S.activeMatch);
+/* The Box Score can show any match without changing which one the Match tab
+   records into; it falls back to the active match. */
+const boxMatch = () => match(S.ui.boxMatch) ?? current();
 function player(pid){
   for(const t of S.teams){ const p=t.players.find(p=>p.id===pid); if(p) return p; }
   return null;
@@ -927,18 +932,28 @@ const COLS = [
 ];
 
 function vBox(){
-  const m = current();
+  const m = boxMatch();
   if(!m) return `<div class="panel"><div class="empty">No match selected.
     <br><br><button class="btn primary" data-go="matches">Go to Matches</button></div></div>`;
 
   S.ui.boxSet ??= 0; // 0 = all sets
+  if(S.ui.boxSet > m.sets.length) S.ui.boxSet = 0;   // a set this match doesn't have
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
 
   const pills = [0, ...m.sets.map((_,i)=>i+1)].map(n=>`
     <button class="${S.ui.boxSet===n?'on':''}" data-boxset="${n}">${n===0?'All':'Set '+n}</button>`).join('');
 
+  const label = x => `${x.date} · ${teamName(x.teamA)} vs ${teamName(x.teamB)}${x.id===S.activeMatch ? ' (recording)' : ''}`;
+  const picker = S.matches.length > 1
+    ? `<select data-boxmatch aria-label="Match" style="max-width:100%">
+        ${[...S.matches].reverse().map(x =>
+          `<option value="${x.id}" ${x.id===m.id?'selected':''}>${esc(label(x))}</option>`).join('')}
+      </select>`
+    : '';
+
   return `
   <div class="panel">
+    ${picker ? `<div class="row" style="margin-bottom:11px"><span class="flabel">Match</span>${picker}</div>` : ''}
     <div class="row">
       <h2 style="margin:0">${esc(teamName(m.teamA))} vs ${esc(teamName(m.teamB))}</h2>
       <span class="badge">${esc(m.date)}</span>
@@ -1191,7 +1206,8 @@ function vMatches(){
       </div>
       <div class="spacer"></div>
       ${m.id===S.activeMatch ? `<span class="badge">Active</span>` : ''}
-      <button class="btn sm" data-open="${m.id}">Open</button>
+      <button class="btn sm" data-boxof="${m.id}" title="See this match's box score and placement">Box Score</button>
+      <button class="btn sm" data-open="${m.id}" title="Record into this match">Open</button>
       <button class="btn sm danger" data-delmatch="${m.id}">Delete</button>
     </div>`;
   }).join('');
@@ -1273,6 +1289,9 @@ function wire(){
   });
 
   /* --- box score --- */
+  on('[data-boxmatch]','change', e => {
+    S.ui.boxMatch = e.target.value; S.ui.boxSet = 0; save(); render();
+  });
   on('[data-boxset]','click', e => { S.ui.boxSet = +e.currentTarget.dataset.boxset; save(); render(); });
   on('[data-csv]','click', exportCsv);
   on('[data-boxteam]','click', e => { S.ui.boxTeam = e.currentTarget.dataset.boxteam; save(); render(); });
@@ -1316,6 +1335,9 @@ function wire(){
                sets:[{a:0,b:0}], events:[]};
     S.matches.push(m); S.activeMatch = m.id; S.ui = {set:1, side:'a'};
     save(); go('match'); toast('Match created');
+  });
+  on('[data-boxof]','click', e => {
+    S.ui.boxMatch = e.currentTarget.dataset.boxof; S.ui.boxSet = 0; save(); go('box');
   });
   on('[data-open]','click', e => {
     S.activeMatch = e.currentTarget.dataset.open;
@@ -1609,7 +1631,7 @@ function download(filename, text, type){
 }
 
 function exportCsv(){
-  const m = current(); if(!m) return;
+  const m = boxMatch(); if(!m) return;
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
   const lines = [['Team','#','Player','Pos', ...COLS.map(c=>c[0])].map(q).join(',')];
@@ -1633,7 +1655,7 @@ function exportCsv(){
    wide 6-zone layout, and unplaced attacks get an explicit row rather than
    quietly vanishing. */
 function exportPlacementCsv(){
-  const m = current(); if(!m) return;
+  const m = boxMatch(); if(!m) return;
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
   const q = v => `"${String(v).replace(/"/g,'""')}"`;
   const lines = [['Team','#','Player','Shot','Zone','Attacks','Kills','Errors','Hit%'].map(q).join(',')];

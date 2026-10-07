@@ -61,7 +61,9 @@ standing between you and losing a season.
    players in one go. Rosters are reused across matches, so you build each opponent once.
 3. **Matches** → pick the two teams and a date → Create.
 4. **Match** → pick a player, tap stats. `+` next to the set pills starts a new set.
-5. **Box Score** → full table for both teams, filterable by set, exportable to CSV.
+5. **Box Score** → full table for both teams, filterable by set, exportable to CSV. The
+   **Match** picker at the top shows any past match (or use **Box Score** next to a match on
+   the Matches tab) without changing which match the Match tab records into.
 
 ## Phone layout
 
