@@ -78,7 +78,10 @@ What changes:
   play, and the error counterparts) sit behind **More stats**, which remembers whether you
   left it open.
 - A full-width **Undo last stat** button.
-- Every control is at least 44px — the iOS minimum touch target.
+- **Box Score shows one team at a time**, with a switch at the top, instead of both teams'
+  22-column tables stacked.
+- Every control is at least 44px — the iOS minimum touch target — and no text is smaller
+  than 11px.
 
 Nothing is duplicated in the data model; it's one app with two layouts.
 
@@ -93,16 +96,22 @@ Optional. Every attack still counts whether or not you locate it.
 where it landed:
 
 1. **Hit** or **Tip** (defaults to Hit every time; `H` / `T` on the keyboard).
-2. **Where the hitter took off** — Left, Middle, Right or Back row, drawn on their side of
-   the net. It's remembered per player, and pre-filled from position the first time
-   (OH → Left, MB → Middle, OPP → Right), so usually you skip straight to step 3.
-   Left/right are the *hitter's*, so their left side appears on the right of the drawing,
-   as you see it across the net.
-3. **Middle set type (optional).** When the take-off is Middle, a **30 / 51 / 60** row
-   appears (`3` / `5` / `6` on the keyboard). It isn't remembered between attacks, since a
+2. **Where the hitter took off** — Power, Middle, Right side or Back row, drawn on their
+   side of the net (`P` / `M` / `R` / `B`). It's remembered per player, and pre-filled from
+   position the first time (OH → Power, MB → Middle, OPP → Right side), so usually you skip
+   straight to the landing spot. The power side is the hitter's left, so it appears on the
+   right of the drawing, as you see it across the net.
+3. **Middle set type (optional).** When the take-off is Middle, **30 / 51 / 60** buttons
+   appear beside Hit / Tip (`3` / `5` / `6` on the keyboard). It isn't remembered between attacks, since a
    middle's set changes play to play. Leave it blank and the attack still counts. The list is
    `MIDDLE_PLAYS` in `index.html`.
-4. **Tap where it landed** on the court. That records the attack and closes the popup.
+4. **Dug by (optional, In Play only).** The other team's numbers appear; tap the defender
+   who dug it and a Dig is logged for them too. It saves switching team tabs mid-rally, and
+   you stay on the attacking team. Pick it *before* the landing spot.
+5. **Tap where it landed** on the court. That records the attack and closes the popup.
+
+The confirmation that follows has an **Undo** button for about four seconds. It removes
+exactly that attack (and its dig), even if you've tapped something since.
 
 **Skip location** still records the attack, just without a spot. **Cancel** (or `Esc`, or
 tapping outside) records nothing. Only in-court landings can be tapped — skip for balls
@@ -141,6 +150,14 @@ player × shot × zone, easy to pivot.
 
 Attacks recorded without a zone are counted and called out explicitly under the court
 rather than silently dropped — otherwise the chart would look complete when it wasn't.
+
+## Fixing a mistake
+
+- **Undo** (the button, or `Z`) removes the most recent stat.
+- The confirmation after each tap has its own **Undo** for that tap.
+- **Tap any row in Recent** to change its player or stat, or delete it (Delete asks for a
+  second tap). Changing an attack to a non-attack stat drops its placement, since a dig has
+  no landing spot.
 
 ## Keyboard shortcuts (Match tab)
 
