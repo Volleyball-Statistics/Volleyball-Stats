@@ -1434,10 +1434,7 @@ function wire(){
     if(S.activeMatch===id) S.activeMatch = S.matches.at(-1)?.id ?? null;
     save(); render();
   });
-  on('[data-export]','click', () => {
-    download('volleyball-stats-' + new Date().toISOString().slice(0,10) + '.json',
-             JSON.stringify(S, null, 2), 'application/json');
-  });
+  on('[data-export]','click', exportAll);
   on('[data-import]','click', () => document.getElementById('fileIn').click());
   const fi = document.getElementById('fileIn');
   if(fi) fi.onchange = ev => {
@@ -1460,12 +1457,45 @@ function wire(){
   on('[data-signin]','click', signInFromForm);
   on('#sbPass','keydown', e => { if(e.key === 'Enter') signInFromForm(); });
   on('[data-signout]','click', signOut);
-  on('[data-wipe]','click', () => {
+  on('[data-wipe]','click', async () => {
     if(!confirm(sync.live
       ? 'Erase ALL teams, matches and stats FOR EVERYONE on the shared data? This cannot be undone.'
       : 'Erase ALL teams, matches and stats? This cannot be undone.')) return;
-    if(!confirm('Really erase everything? Export first if you want a backup.')) return;
+    if(await confirmErase() !== 'erase') return;
     S = blank(); save(); render(); toast('Erased');
+  });
+}
+
+function exportAll(){
+  download('volleyball-stats-' + new Date().toISOString().slice(0,10) + '.json',
+           JSON.stringify(S, null, 2), 'application/json');
+}
+
+/* The second of Erase everything's two confirmations. Two OK taps in a row is
+   too easy to do by reflex — and signed in, it erases the shared data for
+   everyone — so this step has to be typed, with a backup one tap away. */
+function confirmErase(){
+  return new Promise(resolve => {
+    dialog = {resolve};
+    sheet.innerHTML = `
+      <div class="hd"><h2 class="neg">Erase everything?</h2>
+        <button class="x" data-choice="cancel" aria-label="Cancel">×</button></div>
+      <p class="psum" style="margin:0 0 10px">${sync.live
+        ? '<b>This erases every team, match and stat for everyone on the shared data</b> — you and your assistants.'
+        : 'This erases every team, match and stat on this device.'} It can't be undone.</p>
+      <button class="btn" data-export-now style="width:100%;min-height:44px;margin-bottom:12px">Export a backup first</button>
+      <label class="fine" for="eraseWord" style="display:block;margin-bottom:4px">Type ERASE to confirm</label>
+      <input id="eraseWord" autocomplete="off" autocapitalize="characters" spellcheck="false"
+        style="width:100%;min-height:44px;font-size:16px">
+      <div class="ft">
+        <button class="btn danger" data-choice="erase" disabled>Erase everything</button>
+        <button class="btn primary" data-choice="cancel">Cancel</button>
+      </div>`;
+    modal.hidden = false;
+    const word = sheet.querySelector('#eraseWord'), go = sheet.querySelector('[data-choice="erase"]');
+    word.addEventListener('input', () => { go.disabled = word.value.trim().toUpperCase() !== 'ERASE'; });
+    sheet.querySelector('[data-export-now]').onclick = exportAll;
+    setTimeout(() => word.focus(), 50);
   });
 }
 
