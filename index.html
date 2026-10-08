@@ -972,8 +972,12 @@ function vBox(){
   if(S.ui.boxSet > m.sets.length) S.ui.boxSet = 0;   // a set this match doesn't have
   const f = S.ui.boxSet ? {set:S.ui.boxSet} : {};
 
-  const pills = [0, ...m.sets.map((_,i)=>i+1)].map(n=>`
-    <button class="${S.ui.boxSet===n?'on':''}" data-boxset="${n}">${n===0?'All':'Set '+n}</button>`).join('');
+  /* which set to look at: a dropdown, since a 5-set match made a long row of
+     buttons; each option carries the set's score so you can find "the one we lost" */
+  const setPick = `<select data-boxset aria-label="Set">
+    <option value="0" ${S.ui.boxSet===0?'selected':''}>All sets</option>
+    ${m.sets.map((st,i)=>`<option value="${i+1}" ${S.ui.boxSet===i+1?'selected':''}>Set ${i+1} · ${st.a}–${st.b}</option>`).join('')}
+  </select>`;
 
   const label = x => `${x.date} · ${teamName(x.teamA)} vs ${teamName(x.teamB)}${x.id===S.activeMatch ? ' (recording)' : ''}`;
   const picker = S.matches.length > 1
@@ -990,7 +994,7 @@ function vBox(){
       <h2 style="margin:0">${esc(teamName(m.teamA))} vs ${esc(teamName(m.teamB))}</h2>
       <span class="badge">${esc(m.date)}</span>
       <div class="spacer"></div>
-      <div class="setpills" style="margin:0">${pills}</div>
+      <div class="fgroup"><span class="flabel">Set</span>${setPick}</div>
       <button class="btn sm" data-csv>Export CSV</button>
     </div>
     <div class="teamtabs boxteams">
@@ -1330,7 +1334,7 @@ function wire(){
   on('[data-boxmatch]','change', e => {
     S.ui.boxMatch = e.target.value; S.ui.boxSet = 0; save(); render();
   });
-  on('[data-boxset]','click', e => { S.ui.boxSet = +e.currentTarget.dataset.boxset; save(); render(); });
+  on('[data-boxset]','change', e => { S.ui.boxSet = +e.target.value; save(); render(); });
   on('[data-csv]','click', exportCsv);
   on('[data-boxteam]','click', e => { S.ui.boxTeam = e.currentTarget.dataset.boxteam; save(); render(); });
 
