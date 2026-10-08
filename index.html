@@ -965,8 +965,8 @@ const COLS = [
 
 /* Which set to look at: a dropdown, since a 5-set match made a long row of
    buttons; each option carries the set's score so you can find "the one we
-   lost". It appears at the top of the Box Score AND in every placement panel's
-   filter row, next to the chart it filters — all copies are one setting. */
+   lost". It appears at the top of the Box Score AND directly above each shot
+   chart, where you're looking when you want it — all copies are one setting. */
 function setSelect(m){
   return `<div class="fgroup"><span class="flabel">Set</span><select data-boxset aria-label="Set">
     <option value="0" ${S.ui.boxSet===0?'selected':''}>All sets</option>
@@ -1050,7 +1050,6 @@ function placePanel(m, teamId, f){
         ${t.players.map(p=>`<option value="${p.id}" ${who===p.id?'selected':''}>${esc(pFull(p))}</option>`).join('')}
         <option value="TEAM" ${who==='TEAM'?'selected':''}>Team / unassigned</option>
       </select>
-      ${setSelect(m)}
       <div class="fgroup"><span class="flabel">Shot</span>
         <div class="setpills" style="margin:0;grid-column:auto">
           ${[['','All'],...SHOTS].map(([k,l])=>`
@@ -1075,6 +1074,7 @@ function placePanel(m, teamId, f){
             <button class="${killsOnly?'on':''}" data-placekills="1">Kills only</button>
           </div>
         </div>
+        <div style="margin:0 0 7px">${setSelect(m)}</div>
         ${shotSvg(shots)}
         ${shotLegend()}
         ${noLine ? `<p class="fine" style="margin:6px 0 0">${noLine} shot${noLine===1?'':'s'} with no
