@@ -25,7 +25,8 @@
     --header-bg:rgba(15,18,22,.93); --nav-bg:rgba(23,27,33,.97); --row-hover:rgba(255,255,255,.025);
     --court:#0d1116; --court-floor:#141a21; --court-line:#3a4553; --court-bound:#93a1b1;
     --court-label:#66727f; --court-chip:#1e242c;
-    --hit:#d95926; --tip:#3987e5;
+    /* shot chart: colour = where the hitter took off; validated all-pairs (lines cross) */
+    --from-l:#d95926; --from-m:#199e70; --from-r:#3987e5; --from-b:#7d8896;
     --radius:10px;
     color-scheme:dark;
     font-synthesis-weight:none;
@@ -40,7 +41,7 @@
       --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
       --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
       --court-label:#7a8594; --court-chip:#ffffff;
-      --hit:#eb6834; --tip:#2a78d6;
+      --from-l:#eb6834; --from-m:#199e70; --from-r:#2a78d6; --from-b:#8b95a2;
       color-scheme:light;
     }
   }
@@ -53,7 +54,7 @@
       --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
       --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
       --court-label:#7a8594; --court-chip:#ffffff;
-      --hit:#eb6834; --tip:#2a78d6;
+      --from-l:#eb6834; --from-m:#199e70; --from-r:#2a78d6; --from-b:#8b95a2;
       color-scheme:light;
     }
   *{box-sizing:border-box}
@@ -242,9 +243,11 @@
     background:rgba(77,163,255,.16);color:var(--accent)}
 
   /* ============ shot chart ============
-     Hit = orange, tip = blue (validated CVD-safe pair on the court surface).
-     Colour is never the only cue: tips also end in a diamond, hits in a circle,
-     and outcome is carried by line style (solid kill / dashed not a kill). */
+     Colour = where the hitter took off: power orange, middle teal, right side
+     blue, back row / unknown grey (validated all-pairs, since lines cross, in
+     both themes). Shot type is the end mark (hit circle, tip diamond) and
+     outcome is line style (solid kill / dashed not a kill), so nothing rests
+     on colour alone. */
   .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:var(--court);border:1px solid var(--line);
     border-radius:9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .shots .floor{fill:var(--court-floor)}
@@ -792,7 +795,9 @@ function shotSvg(events, {pick=null}={}){
       ? [playX(ev.play), PLAY_Y]             // a middle set starts at its own slot on the net
       : FROM_XY[ev.from];
     const tip = ev.shot === 'tip', kill = ev.stat === 'kill';
-    const col = tip ? 'var(--tip)' : 'var(--hit)';
+    // colour = take-off (power / middle / right side); back row and unknown are grey.
+    // hit vs tip is carried by the end mark (circle / diamond) instead.
+    const col = FROM_COLOR[ev.from] ?? 'var(--from-b)';
     const miss = kill ? '' : 'miss';
     const p = ev.playerId ? player(ev.playerId) : null;
     const title = [p ? pFull(p) : 'Team', STAT_LABEL[ev.stat], tip ? 'tip' : 'hit',
@@ -801,7 +806,7 @@ function shotSvg(events, {pick=null}={}){
     // inline style: the .end CSS would otherwise beat SVG presentation attributes
     const paint = kill ? `fill:${col}` : `stroke:${col}`;
     const end = tip
-      ? `<path class="end ${miss}" d="M${x} ${y-2.6}L${x+2.6} ${y}L${x} ${y+2.6}L${x-2.6} ${y}Z" style="${paint}"/>`
+      ? `<path class="end ${miss}" d="M${x} ${y-3}L${x+3} ${y}L${x} ${y+3}L${x-3} ${y}Z" style="${paint}"/>`
       : `<circle class="end ${miss}" cx="${x}" cy="${y}" r="2.1" style="${paint}"/>`;
     return `<g><title>${esc(title)}</title>
       ${from ? `<line class="mk ${miss}" x1="${from[0]}" y1="${from[1]}" x2="${x}" y2="${y}" stroke="${col}"/>` : ''}
@@ -826,15 +831,23 @@ function shotSvg(events, {pick=null}={}){
 }
 
 /* legend: names both encodings, so identity never rests on colour alone */
+const FROM_COLOR = {L:'var(--from-l)', M:'var(--from-m)', R:'var(--from-r)', B:'var(--from-b)'};
 function shotLegend(){
   const sw = (col, dash, shape) => `<svg viewBox="0 0 22 10">
     <line x1="1" y1="5" x2="15" y2="5" stroke="${col}" stroke-width="2" ${dash?'stroke-dasharray="3 2"':''}/>
-    ${shape==='d' ? `<path d="M18 1.5L21.5 5L18 8.5L14.5 5Z" fill="${col}"/>` : `<circle cx="18" cy="5" r="3" fill="${col}"/>`}</svg>`;
+    ${shape==='d' ? `<path d="M18 1.5L21.5 5L18 8.5L14.5 5Z" fill="${col}"/>`
+      : shape==='c' ? `<circle cx="18" cy="5" r="3" fill="${col}"/>` : ''}</svg>`;
   return `<div class="slegend">
-    <span>${sw('var(--hit)', false, 'c')}Hit</span>
-    <span>${sw('var(--tip)', false, 'd')}Tip</span>
-    <span>${sw('var(--muted)', false, 'c')}Solid = kill</span>
-    <span>${sw('var(--muted)', true, 'c')}Dashed = not a kill</span>
+    <span>${sw('var(--from-l)', false)}Power</span>
+    <span>${sw('var(--from-m)', false)}Middle</span>
+    <span>${sw('var(--from-r)', false)}Right side</span>
+    <span>${sw('var(--from-b)', false)}Back row</span>
+  </div>
+  <div class="slegend">
+    <span>${sw('var(--muted)', false, 'c')}Hit</span>
+    <span>${sw('var(--muted)', false, 'd')}Tip</span>
+    <span>${sw('var(--muted)', false)}Solid = kill</span>
+    <span>${sw('var(--muted)', true)}Dashed = not a kill</span>
   </div>`;
 }
 
