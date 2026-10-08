@@ -143,6 +143,10 @@ What changes:
 
 Nothing is duplicated in the data model; it's one app with two layouts.
 
+**Light or dark.** The app follows the phone's light/dark setting until you tap the ☀︎ / ☾
+button in the header; after that your choice sticks on that device (it isn't shared with
+anyone else's).
+
 This layout is what you get on the installed home-screen app — see
 [Installing on the iPhone](#installing-on-the-iphone) above.
 
