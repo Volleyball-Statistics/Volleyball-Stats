@@ -96,9 +96,14 @@ app name shows *Synced*, *Uploading…*, *Offline · N changes waiting* or *Can'
 - Filters, which match you're recording into, and your remembered take-off spots stay on
   each device.
 - While signed in, **Import adds** a file's teams and matches and never removes anything.
-  **Delete match** and **Erase everything** affect everyone, and say so.
+  **Delete match** and **Erase everything** affect everyone, and say so. Erase everything
+  asks twice, and the second time you have to **type ERASE** — with an **Export a backup
+  first** button on the same screen.
 - **Sign out** clears this device's copy (everything stays in the shared data). If changes
   are still waiting to upload, it warns first.
+
+**What goes in it.** Players are 16–18, so rosters hold **first names and jersey numbers
+only** — no surnames, birthdays, contact details or photos.
 
 **Free-plan notes.** A free Supabase project pauses after about a week with no activity
 (say, the off-season). Nothing is lost; un-pause it from the dashboard.
