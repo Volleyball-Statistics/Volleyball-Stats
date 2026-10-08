@@ -187,7 +187,7 @@ tapping outside) records nothing. Only in-court landings can be tapped — skip 
 that went out or into the net.
 
 **Shot chart.** Each located attack is a line from take-off to landing. **Colour = where
-the hitter took off: orange = power (left side), teal = middle, blue = right side, grey =
+the hitter took off: red = power (left side), yellow = middle, blue = right side, grey =
 back row** (or an older attack with no take-off). **Circle = hit, diamond = tip. Solid =
 kill, dashed = not a kill.** The three colours were checked to stay distinct from each other
 for colour-blind viewers, in both light and dark mode. The Match tab shows a live chart for whichever team
