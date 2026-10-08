@@ -470,6 +470,11 @@
   .themebtn{order:3;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
     border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:16px;line-height:1}
   .themebtn:hover{color:var(--fg);background:var(--hover)}
+  .demobar{display:flex;align-items:center;gap:8px;max-width:1180px;margin:10px auto 0;padding:7px 10px 7px 14px;
+    background:rgba(245,196,0,.14);border:1px solid rgba(245,196,0,.45);border-radius:var(--radius);font-size:12.5px}
+  .demobar[hidden]{display:none}
+  .demobar a.btn{text-decoration:none;color:var(--fg)}
+  @media(max-width:700px){.demobar{margin:10px 11px 0;flex-wrap:wrap;font-size:12px}}
   .syncpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted);
     background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
   .syncpill[hidden]{display:none}
@@ -503,6 +508,12 @@
   </div>
 </header>
 
+<div class="demobar" id="demobar" hidden>
+  <span><b>Demo</b> · sample data — nothing here touches real stats</span>
+  <span class="spacer"></span>
+  <button class="btn sm" id="demoReset">Reset</button>
+  <a class="btn sm" href="./">Exit demo</a>
+</div>
 <main id="app"></main>
 <div class="toast" id="toast"></div>
 <!-- lives outside #app so a re-render underneath never wipes it -->
@@ -517,7 +528,11 @@
    browser's localStorage under the key below. Nothing is sent
    anywhere. Use Matches → Export to back up / move machines.
    ============================================================ */
-const KEY = 'vbstats.v1';
+/* Demo mode (?demo in the link): sample matches in their own storage key, so
+   a demo can never overwrite or read anyone's real stats, and shared-data
+   sync is switched off entirely. */
+const DEMO = new URLSearchParams(location.search).has('demo');
+const KEY = DEMO ? 'vbstats.demo.v1' : 'vbstats.v1';
 
 /* ---------- stat definitions ---------- */
 /* tier 1 = thumb-sized button on the phone pad (the nine you tap live);
@@ -1073,7 +1088,7 @@ function vMatch(){
                Same for serves: Ace and Serve Error already count, <b>Serve in Play</b> is the rest.<br>
                Counts on each button are this set only. Keyboard letters work once a player is selected.
              </div>`
-          : `<div class="nosel">Select a player on the left to start recording.</div>`}
+          : `<div class="nosel">Select a player to start recording.</div>`}
       </div>
       <div class="panel" style="margin:0">
         <h3>Recent <span class="fine" style="text-transform:none;letter-spacing:0">· tap one to fix it</span></h3>
@@ -2242,6 +2257,7 @@ async function startSync(session){
 /* On launch: a saved sign-in counts straight away, even with no signal at the
    gym — taps are kept as waiting changes and connect() keeps trying. */
 async function resumeSync(){
+  if(DEMO) return;                              // the demo never syncs, even on a signed-in device
   if(!localStorage.getItem(AUTH_KEY)) return;   // never signed in here: stay fully local
   try{
     const {data} = await client().auth.getSession();   // read from this device, no network
@@ -2374,6 +2390,11 @@ function mergeImport(d){
 }
 
 function sharedPanel(){
+  if(DEMO) return `<div class="panel">
+    <h2>Shared data</h2>
+    <div class="hint" style="margin-top:0">Off in the demo, so sample data can never reach a real team's shared
+      data. <a href="./" style="color:var(--accent)">Exit the demo</a> to sign in.</div>
+  </div>`;
   if(sync.live || sync.status === 'connecting' && sync.email){
     return `<div class="panel">
       <h2>Shared data</h2>
@@ -2443,6 +2464,26 @@ document.getElementById('themebtn').onclick = () => {
 };
 prefersLight.addEventListener('change', paintTheme);
 paintTheme();
+
+/* ---------- demo ----------
+   First open of ?demo (or Reset) loads demo.json into the demo store; after
+   that the visitor's changes persist there until they reset. */
+async function loadDemo(){
+  try{
+    const d = await (await fetch('./demo.json')).json();
+    S = Object.assign(blank(), d);
+    view = 'box';
+    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.v === 'box'));
+    save(); render();
+  }catch(e){ toast('Could not load the sample data'); console.error(e); }
+}
+if(DEMO){
+  document.getElementById('demobar').hidden = false;
+  document.getElementById('demoReset').onclick = () => {
+    if(confirm('Reset the demo to the original sample data?')) loadDemo();
+  };
+  if(!S.teams.length && !S.matches.length) loadDemo();
+}
 
 /* ---------- boot ---------- */
 if(!S.activeMatch && S.matches.length) S.activeMatch = S.matches.at(-1).id;

@@ -8,6 +8,12 @@ in to [shared data](#shared-data-optional) and record into one live copy togethe
 
 **On the iPhone:** <https://volleyball-statistics.github.io/Volleyball-Stats/> → Share → Add to Home Screen.
 
+**Try it with sample data:** <https://volleyball-statistics.github.io/Volleyball-Stats/?demo>
+opens three made-up matches. The demo keeps its own storage — it never reads or overwrites
+real stats on that device — and shared-data sync is off inside it, so sample data can't
+reach a team's shared copy. **Reset** restores the sample; **Exit demo** returns to the
+real app. The sample is `demo.json` (fictional teams; first names only for one team).
+
 ## Installing on the iPhone
 
 1. Open <https://volleyball-statistics.github.io/Volleyball-Stats/> in **Safari** (must be Safari — Chrome
