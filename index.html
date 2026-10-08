@@ -221,6 +221,11 @@
   .shots .from{cursor:pointer}
   .shots .from rect{fill:#1e242c;stroke:#3a4553;stroke-width:.6}
   .shots .from.on rect{fill:var(--accent);stroke:var(--accent)}
+  .shots .ptick circle{fill:var(--dim)}
+  .shots .ptick text{fill:var(--dim);font-size:3.2px;font-weight:800;text-anchor:middle}
+  .shots .ptick.on circle{fill:var(--accent)}
+  .shots .ptick.on text{fill:var(--accent)}
+  .shots .ptick[data-pplay]{cursor:pointer}
   .shots .from text{fill:var(--muted);font-size:3.4px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
   .shots .from.on text{fill:#06121f}
   .shots .tapzone{cursor:crosshair}
@@ -466,14 +471,29 @@ const FROMS      = [['L','Power'],['M','Middle'],['R','Right side'],['B','Back r
 const FROM_LABEL = Object.fromEntries(FROMS);
 const FROM_BY_POS = {OH:'L', MB:'M', OPP:'R'};
 /* Set type for an attack from the middle. Optional, and only offered when the
-   take-off is Middle. Edit this list to match your team's play calls. */
+   take-off is Middle. Edit this list to match your team's play calls.
+   Calls follow the standard two-digit system: the FIRST digit is which 1 m
+   slot along the net it's hit from, counted from the hitter's left (power-side)
+   antenna, 1-9; the second is the set's height / tempo. So a 30 is hit about
+   2.5 m in from the power side — off-centre — not from the middle of the net,
+   a 51 is at the centre and a 60 about 1 m right of it. Any call added here is
+   positioned from its first digit; nothing else needs changing. */
 const MIDDLE_PLAYS = ['30','51','60'];
+/* where along the net (chart x) a middle set is hit from. Slot z is centred
+   (z - 0.5) m from the hitter's left antenna, which is the RIGHT end of the
+   drawing, as you see them across the net. */
+function playX(code){
+  const z = parseInt(String(code)[0], 10);
+  return z >= 1 && z <= 9 ? COURT - (z - 0.5) * CM : null;
+}
 
 /* Court geometry for the shot chart, in SVG units (10 per metre).
    The landing half is 9 m x 9 m with the net along y=0 and the 3 m line at
    y=30; the hitter's side is drawn above the net, cropped to 4.5 m. */
 const CM = 10, COURT = 9*CM, LINE3 = 3*CM, THEIRS = 4.5*CM;
-const FROM_XY = {L:[75,-11], M:[45,-11], R:[15,-11], B:[45,-38]};
+const FROM_XY = {L:[75,-16], M:[45,-16], R:[15,-16], B:[45,-38]};
+/* a middle set leaves from its slot, right at the net, with room above for its label */
+const PLAY_Y = -3;
 /* zone from a landing point: columns are 3 m wide, rows split at the 3 m line */
 function zoneAt(x, y){
   const col = x < 30 ? 0 : x < 60 ? 1 : 2;
@@ -667,11 +687,25 @@ function shotSvg(events, {pick=null}={}){
       : `<text class="sidel" x="${x}" y="${y-4}">${l.toUpperCase()}</text>`;
   }).join('');
 
+  const tickCodes = pick
+    ? (pick.from === 'M' ? MIDDLE_PLAYS : [])
+    : [...new Set(events.filter(ev => ev.from === 'M' && ev.play).map(ev => ev.play))];
+  const ticks = tickCodes.map(code => {
+    const x = playX(code); if(x == null) return '';
+    const on = pick && pick.play === code;
+    return `<g class="ptick ${on ? 'on' : ''}" ${pick ? `data-pplay="${code}"` : ''}>
+      ${pick ? `<rect x="${x-4.5}" y="-10" width="9" height="10" fill="transparent"/>` : ''}
+      <circle cx="${x}" cy="${PLAY_Y}" r="1.3"/><text x="${x}" y="${PLAY_Y - 2.6}">${code}</text></g>`;
+  }).join('');
+
   // misses first so kills draw on top of them
   const sorted = [...events].sort((a,b) => (a.stat==='kill') - (b.stat==='kill'));
   const marks = sorted.map(ev => {
     const pt = landing(ev); if(!pt) return '';
-    const [x, y] = pt, from = FROM_XY[ev.from];
+    const [x, y] = pt;
+    const from = ev.from === 'M' && playX(ev.play) != null
+      ? [playX(ev.play), PLAY_Y]             // a middle set starts at its own slot on the net
+      : FROM_XY[ev.from];
     const tip = ev.shot === 'tip', kill = ev.stat === 'kill';
     const col = tip ? 'var(--tip)' : 'var(--hit)';
     const miss = kill ? '' : 'miss';
@@ -701,6 +735,7 @@ function shotSvg(events, {pick=null}={}){
     <g pointer-events="none">${zl}</g>
     <line class="netl" x1="-3" y1="0" x2="${COURT+3}" y2="0"/>
     ${fromMarks}
+    ${ticks}
     <g ${pick?'pointer-events="none"':''}>${marks}</g>
   </svg>`;
 }
