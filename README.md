@@ -186,9 +186,11 @@ exactly that attack (and its dig), even if you've tapped something since.
 tapping outside) records nothing. Only in-court landings can be tapped — skip for balls
 that went out or into the net.
 
-**Shot chart.** Each located attack is a line from take-off to landing. **Orange = hit,
-blue = tip** (tips also end in a diamond, hits in a circle, so it reads without colour).
-**Solid = kill, dashed = not a kill.** The Match tab shows a live chart for whichever team
+**Shot chart.** Each located attack is a line from take-off to landing. **Colour = where
+the hitter took off: red = power (left side), yellow = middle, blue = right side, grey =
+back row** (or an older attack with no take-off). **Circle = hit, diamond = tip. Solid =
+kill, dashed = not a kill.** The three colours were checked to stay distinct from each other
+for colour-blind viewers, in both light and dark mode. The Match tab shows a live chart for whichever team
 you're recording; it's open by default on a desktop and closed on a phone, and your toggle
 sticks. Attacks recorded before exact spots existed are drawn as landing marks only,
 scattered inside their zone.
