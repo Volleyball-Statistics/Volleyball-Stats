@@ -437,7 +437,7 @@
     .pdel{width:44px;margin-left:6px}
 
     /* scoreboard: the set picker moves into the middle column, saving a row */
-    .setpills{display:none}
+    .score > .setpills{display:none}
     .setsel{display:block;width:100%;margin-top:6px;font-size:14px;padding:6px}
     .mid .setno{display:none}
 
@@ -708,7 +708,7 @@ const errors     = r => r.attackErr + r.serveErr + r.recErr + r.setErr + r.block
 /* Attacks broken out by landing zone. Returns per-zone tallies plus the
    attacks that were recorded without a location, which must stay visible —
    otherwise the court silently under-reports and looks authoritative. */
-function placement(m, teamId, {playerId=null, shot=null, set=null, play=null}={}){
+function placement(m, teamId, {playerId=null, shot=null, set=null, play=null, from=null}={}){
   const grid = {}, unplaced = {att:0, kill:0, err:0};
   for(const ev of m.events){
     if(ev.teamId !== teamId || !ATTACK_STATS.has(ev.stat)) continue;
@@ -716,6 +716,7 @@ function placement(m, teamId, {playerId=null, shot=null, set=null, play=null}={}
     if(playerId && (ev.playerId ?? 'TEAM') !== playerId) continue;
     if(shot && (ev.shot || 'hit') !== shot) continue;
     if(play && ev.play !== play) continue;
+    if(from && ev.from !== from) continue;
     const c = ev.zone ? (grid[ev.zone] ??= {att:0, kill:0, err:0}) : unplaced;
     c.att++;
     if(ev.stat === 'kill') c.kill++;
@@ -876,13 +877,14 @@ function shotLegend(){
 }
 
 /* the located attacks a shot chart draws, under the usual placement filters */
-function shotEvents(m, teamId, {playerId=null, shot=null, set=null, play=null, killsOnly=false}={}){
+function shotEvents(m, teamId, {playerId=null, shot=null, set=null, play=null, from=null, killsOnly=false}={}){
   return m.events.filter(ev =>
     ev.teamId === teamId && ATTACK_STATS.has(ev.stat) && landing(ev)
     && (!set || ev.set === set)
     && (!playerId || (ev.playerId ?? 'TEAM') === playerId)
     && (!shot || (ev.shot || 'hit') === shot)
     && (!play || ev.play === play)
+    && (!from || ev.from === from)
     && (!killsOnly || ev.stat === 'kill'));
 }
 
@@ -1183,11 +1185,14 @@ function placePanel(m, teamId, f){
      visible while active so an empty result can always be switched back */
   const play = S.ui.placePlay ?? '';
   const typed = m.events.some(ev => ev.teamId === teamId && ev.play);
-  const filt = {...f, playerId: who||null, shot: shot||null, play: play||null};
+  /* take-off filter: where the hitter attacked from. Middle sets only exist
+     from the middle, so the middle-set row hides for the other three */
+  const from = S.ui.placeFrom ?? '';
+  const filt = {...f, playerId: who||null, shot: shot||null, play: play||null, from: from||null};
   const {grid, unplaced} = placement(m, teamId, filt);
 
   const located = Object.values(grid).reduce((n,c)=>n+c.att, 0);
-  if(!located && !unplaced.att && !play) return '';   // nothing to show yet
+  if(!located && !unplaced.att && !play && !from) return '';   // nothing to show yet
 
   const max = Math.max(0, ...ZONE_ORDER.map(z=>grid[z]?.att ?? 0));
   const best = ZONE_ORDER
@@ -1199,7 +1204,7 @@ function placePanel(m, teamId, f){
   const killsOnly = !!S.ui.placeKills;
   const shots = shotEvents(m, teamId, {...filt, killsOnly});
   const noLine = shots.filter(ev => !ev.from).length;
-  const mid = middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null}, play);
+  const mid = !from || from==='M' ? middlePlays(m, teamId, {...f, playerId: who||null, shot: shot||null}, play) : '';
 
   return `
   <div class="panel">
@@ -1217,7 +1222,13 @@ function placePanel(m, teamId, f){
             <button class="${shot===k?'on':''}" data-placeshot="${k}">${l}</button>`).join('')}
         </div>
       </div>
-      ${typed || play ? `<div class="fgroup"><span class="flabel">Middle set</span>
+      <div class="fgroup"><span class="flabel">From</span>
+        <div class="setpills" style="margin:0;grid-column:auto">
+          ${[['','All'],...FROMS].map(([k,l])=>`
+            <button class="${from===k?'on':''}" data-placefrom="${k}">${l}</button>`).join('')}
+        </div>
+      </div>
+      ${(typed || play) && (!from || from==='M') ? `<div class="fgroup"><span class="flabel">Middle set</span>
         <div class="setpills" style="margin:0;grid-column:auto">
           ${['', ...MIDDLE_PLAYS].map(k => `
             <button class="${play===k?'on':''}" data-placeplay="${k}">${k || 'All'}</button>`).join('')}
@@ -1247,7 +1258,7 @@ function placePanel(m, teamId, f){
           ${courtHtml(grid, {detail:true})}
           ${courtScale(max)}
         </div>
-        <p><b>${esc(label)}</b>${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · middle set ${play} only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
+        <p><b>${esc(label)}</b>${from?` · from ${FROM_LABEL[from].toLowerCase()}`:''}${shot?` · ${SHOT_LABEL[shot].toLowerCase()}s only`:''}${play?` · middle set ${play} only`:''}${S.ui.boxSet?` · set ${S.ui.boxSet}`:''}</p>
         ${located
           ? `<p>${located} located attack${located===1?'':'s'}.
                Most often <b>zone ${best.z}</b> — ${best.att} time${best.att===1?'':'s'},
@@ -1491,6 +1502,11 @@ function wire(){
     S.ui['place_'+e.target.dataset.placeplayer] = e.target.value; save(); render();
   });
   on('[data-placeshot]','click', e => { S.ui.placeShot = e.currentTarget.dataset.placeshot; save(); render(); });
+  on('[data-placefrom]','click', e => {
+    S.ui.placeFrom = e.currentTarget.dataset.placefrom;
+    if(S.ui.placeFrom && S.ui.placeFrom !== 'M') S.ui.placePlay = '';
+    save(); render();
+  });
   on('[data-placeplay]','click', e => { S.ui.placePlay = e.currentTarget.dataset.placeplay; save(); render(); });
   on('[data-placekills]','click', e => { S.ui.placeKills = e.currentTarget.dataset.placekills === '1'; save(); render(); });
   on('[data-placecsv]','click', exportPlacementCsv);
