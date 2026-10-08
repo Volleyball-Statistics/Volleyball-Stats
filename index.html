@@ -10,14 +10,52 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icon-192.png">
 <title>Volleyball Stats</title>
+<script>try{var t=localStorage.getItem('vbstats.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 <style>
+  /* Colour tokens. Dark is the default; light follows the phone's setting
+     unless someone picks one with the header toggle (data-theme on <html>).
+     Every light value was contrast-checked: text >= 4.5:1 on all surfaces,
+     shot-chart hit/tip pair re-validated for colour-blind separation. */
   :root{
     --bg:#0f1216; --panel:#171b21; --panel2:#1e242c; --line:#2a323c;
     --fg:#e8edf3; --muted:#93a1b1; --dim:#808c9a;
     --accent:#4da3ff; --good:#3ecf8e; --bad:#ff6b6b; --warn:#ffc857;
+    --hover:#242c36; --hover-line:#3c4653; --hover2:#252d38; --press:#2c343f; --well:#0f1319;
+    --on-accent:#06121f; --accent-hover:#69b2ff; --good-ink:#7de5b8; --bad-ink:#ff9b9b;
+    --header-bg:rgba(15,18,22,.93); --nav-bg:rgba(23,27,33,.97); --row-hover:rgba(255,255,255,.025);
+    --court:#0d1116; --court-floor:#141a21; --court-line:#3a4553; --court-bound:#93a1b1;
+    --court-label:#66727f; --court-chip:#1e242c;
+    --hit:#d95926; --tip:#3987e5;
     --radius:10px;
+    color-scheme:dark;
     font-synthesis-weight:none;
   }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f4f6f9; --panel:#ffffff; --panel2:#eef1f5; --line:#d5dbe3;
+      --fg:#121821; --muted:#47525f; --dim:#5b6674;
+      --accent:#1d68c9; --good:#0f7a4b; --bad:#b83232; --warn:#8a5d00;
+      --hover:#e4e9ef; --hover-line:#b9c3cf; --hover2:#e4e9ef; --press:#d9e0e8; --well:#e3e8ef;
+      --on-accent:#ffffff; --accent-hover:#2f7ad8; --good-ink:#0f7a4b; --bad-ink:#b83232;
+      --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
+      --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
+      --court-label:#7a8594; --court-chip:#ffffff;
+      --hit:#eb6834; --tip:#2a78d6;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"]{
+      --bg:#f4f6f9; --panel:#ffffff; --panel2:#eef1f5; --line:#d5dbe3;
+      --fg:#121821; --muted:#47525f; --dim:#5b6674;
+      --accent:#1d68c9; --good:#0f7a4b; --bad:#b83232; --warn:#8a5d00;
+      --hover:#e4e9ef; --hover-line:#b9c3cf; --hover2:#e4e9ef; --press:#d9e0e8; --well:#e3e8ef;
+      --on-accent:#ffffff; --accent-hover:#2f7ad8; --good-ink:#0f7a4b; --bad-ink:#b83232;
+      --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
+      --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
+      --court-label:#7a8594; --court-chip:#ffffff;
+      --hit:#eb6834; --tip:#2a78d6;
+      color-scheme:light;
+    }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
@@ -36,7 +74,7 @@
 
   /* ---------- top bar ---------- */
   header{
-    position:sticky;top:0;z-index:30;background:rgba(15,18,22,.93);
+    position:sticky;top:0;z-index:30;background:var(--header-bg);
     backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
   }
   .bar{display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
@@ -56,9 +94,9 @@
   .empty{color:var(--dim);padding:22px;text-align:center;font-size:13px}
 
   .btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 13px;font-weight:600;font-size:13px}
-  .btn:hover{background:#242c36;border-color:#3c4653}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06121f}
-  .btn.primary:hover{background:#69b2ff}
+  .btn:hover{background:var(--hover);border-color:var(--hover-line)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  .btn.primary:hover{background:var(--accent-hover)}
   .btn.danger{color:var(--bad)}
   .btn.sm{padding:4px 9px;font-size:12px}
   .btn:disabled{opacity:.4;cursor:not-allowed}
@@ -72,7 +110,7 @@
   .side .pts{font-size:40px;font-weight:800;line-height:1;letter-spacing:-2px}
   .side .ctl{display:flex;gap:5px}
   .side .ctl button{flex:0 0 auto;width:30px;height:26px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;font-weight:700;color:var(--muted)}
-  .side .ctl button:hover{color:var(--fg);background:#242c36}
+  .side .ctl button:hover{color:var(--fg);background:var(--hover)}
   .mid{text-align:center;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
   .mid .setno{font-size:13px;color:var(--fg);margin-bottom:4px;letter-spacing:0;text-transform:none}
   /* own full-width row: in the centre column it claimed ~194px and squashed
@@ -80,7 +118,7 @@
   .setpills{grid-column:1/-1;display:flex;gap:4px;justify-content:center;margin-top:2px;flex-wrap:wrap}
   .setpills button{padding:3px 9px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);
     font-size:11px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
-  .setpills button.on{background:var(--accent);border-color:var(--accent);color:#06121f}
+  .setpills button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 
   /* ---------- tally ---------- */
   .tally{display:grid;grid-template-columns:290px 1fr;gap:14px;align-items:start}
@@ -96,15 +134,15 @@
   .teamtabs{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:8px;margin-bottom:10px}
   .teamtabs button{flex:1;padding:7px;border-radius:6px;font-weight:700;font-size:12px;color:var(--muted);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .teamtabs button.on{background:var(--accent);color:#06121f}
+  .teamtabs button.on{background:var(--accent);color:var(--on-accent)}
   .roster{display:flex;flex-direction:column;gap:5px;max-height:430px;overflow:auto}
   .pchip{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;
     background:var(--panel2);border:1px solid var(--line);text-align:left;width:100%}
-  .pchip:hover{background:#242c36}
+  .pchip:hover{background:var(--hover)}
   .pchip.on{border-color:var(--accent);background:rgba(77,163,255,.14);box-shadow:inset 0 0 0 1px var(--accent)}
-  .pchip .no{min-width:26px;height:22px;display:grid;place-items:center;border-radius:5px;background:#0f1319;
+  .pchip .no{min-width:26px;height:22px;display:grid;place-items:center;border-radius:5px;background:var(--well);
     font-weight:800;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-  .pchip.on .no{background:var(--accent);color:#06121f}
+  .pchip.on .no{background:var(--accent);color:var(--on-accent)}
   .pchip .pn{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pchip .pos{margin-left:auto;font-size:11px;color:var(--dim);font-weight:700;letter-spacing:.05em}
 
@@ -114,10 +152,10 @@
   .sbtns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .sbtn{position:relative;padding:11px 8px 9px;border-radius:8px;background:var(--panel);
     border:1px solid var(--line);font-weight:700;font-size:12.5px;text-align:center;line-height:1.2}
-  .sbtn:hover{background:#252d38;transform:translateY(-1px)}
+  .sbtn:hover{background:var(--hover2);transform:translateY(-1px)}
   .sbtn:active{transform:translateY(0)}
-  .sbtn.good{border-color:rgba(62,207,142,.4);color:#7de5b8}
-  .sbtn.bad{border-color:rgba(255,107,107,.35);color:#ff9b9b}
+  .sbtn.good{border-color:rgba(62,207,142,.4);color:var(--good-ink)}
+  .sbtn.bad{border-color:rgba(255,107,107,.35);color:var(--bad-ink)}
   .sbtn .kb{display:block;font-size:10px;color:var(--dim);font-weight:700;margin-top:3px;letter-spacing:.06em}
   .sbtn .ct{position:absolute;top:4px;right:6px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
   .live{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
@@ -147,7 +185,7 @@
     letter-spacing:.06em;font-weight:800;position:sticky;top:0;cursor:help}
   th:first-child,td:first-child{text-align:center;width:44px}
   th:nth-child(2),td:nth-child(2){text-align:left}
-  tbody tr:hover{background:rgba(255,255,255,.025)}
+  tbody tr:hover{background:var(--row-hover)}
   tbody tr:last-child td{border-bottom:none}
   tr.tot{background:var(--panel2);font-weight:800}
   tr.tot td{border-top:2px solid var(--line)}
@@ -181,9 +219,9 @@
   .fine{font-size:11px;color:var(--dim);font-weight:700;text-transform:none;letter-spacing:0}
   .shotsel{display:flex;gap:3px;background:var(--panel);padding:3px;border-radius:8px}
   .shotsel button{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;color:var(--muted);min-height:34px}
-  .shotsel button.on{background:var(--accent);color:#06121f}
+  .shotsel button.on{background:var(--accent);color:var(--on-accent)}
 
-  .court{background:#0d1116;border:1px solid var(--line);border-radius:9px;padding:8px}
+  .court{background:var(--court);border:1px solid var(--line);border-radius:9px;padding:8px}
   .court .net{text-align:center;font-size:11px;letter-spacing:.2em;color:var(--dim);font-weight:800;
     border-bottom:2px solid var(--accent);padding-bottom:4px;margin-bottom:7px}
   .zones{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
@@ -203,23 +241,22 @@
      Hit = orange, tip = blue (validated CVD-safe pair on the court surface).
      Colour is never the only cue: tips also end in a diamond, hits in a circle,
      and outcome is carried by line style (solid kill / dashed not a kill). */
-  :root{--hit:#d95926; --tip:#3987e5}
-  .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:#0d1116;border:1px solid var(--line);
+  .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:var(--court);border:1px solid var(--line);
     border-radius:9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-  .shots .floor{fill:#141a21}
-  .shots .ln{stroke:#3a4553;stroke-width:.5;fill:none}
-  .shots .bound{stroke:#93a1b1;stroke-width:.8;fill:none}
+  .shots .floor{fill:var(--court-floor)}
+  .shots .ln{stroke:var(--court-line);stroke-width:.5;fill:none}
+  .shots .bound{stroke:var(--court-bound);stroke-width:.8;fill:none}
   .shots .netl{stroke:var(--fg);stroke-width:1.4}
-  .shots .zl{fill:#66727f;font-size:5px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
-  .shots .sidel{fill:#66727f;font-size:3.4px;font-weight:800;letter-spacing:.3px;text-anchor:middle}
+  .shots .zl{fill:var(--court-label);font-size:5px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
+  .shots .sidel{fill:var(--court-label);font-size:3.4px;font-weight:800;letter-spacing:.3px;text-anchor:middle}
   /* thin and slightly translucent: a full match is 60+ lines, and where they
      pile up the overlap itself should read as "they go here a lot" */
   .shots .mk{stroke-width:.75;stroke-linecap:round;fill:none;opacity:.8}
   .shots .mk.miss{stroke-dasharray:2 1.6;stroke-width:.55;opacity:.5}
-  .shots .end{stroke:#0d1116;stroke-width:.6}
-  .shots .end.miss{fill:#0d1116;stroke-width:1}
+  .shots .end{stroke:var(--court);stroke-width:.6}
+  .shots .end.miss{fill:var(--court);stroke-width:1}
   .shots .from{cursor:pointer}
-  .shots .from rect{fill:#1e242c;stroke:#3a4553;stroke-width:.6}
+  .shots .from rect{fill:var(--court-chip);stroke:var(--court-line);stroke-width:.6}
   .shots .from.on rect{fill:var(--accent);stroke:var(--accent)}
   .shots .ptick circle{fill:var(--dim)}
   .shots .ptick text{fill:var(--dim);font-size:3.2px;font-weight:800;text-anchor:middle}
@@ -227,7 +264,7 @@
   .shots .ptick.on text{fill:var(--accent)}
   .shots .ptick[data-pplay]{cursor:pointer}
   .shots .from text{fill:var(--muted);font-size:3.4px;font-weight:800;text-anchor:middle;dominant-baseline:middle}
-  .shots .from.on text{fill:#06121f}
+  .shots .from.on text{fill:var(--on-accent)}
   .shots .tapzone{cursor:crosshair}
   /* court lines sit above the tap surface; let taps fall through them */
   .shots .ln,.shots .bound,.shots .netl,.shots .sidel{pointer-events:none}
@@ -258,7 +295,7 @@
   .digs::-webkit-scrollbar{height:0}
   .digs button{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 9px;border-radius:8px;
     background:var(--panel2);border:1px solid var(--line);font-weight:800;font-size:13px;color:var(--muted)}
-  .digs button.on{background:var(--good);border-color:var(--good);color:#06121f}
+  .digs button.on{background:var(--good);border-color:var(--good);color:var(--on-accent)}
   .sheet .ft .btn{flex:1;min-height:44px}
   @media(max-width:700px){
     .modal{align-items:flex-end;padding:0}
@@ -289,9 +326,9 @@
     border:1px solid var(--line);font-weight:800;font-size:12.5px;line-height:1.15;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     padding:7px 4px;-webkit-tap-highlight-color:transparent;text-align:center}
-  .pbtn:active{transform:scale(.955);background:#2c343f}
-  .pbtn.good{border-color:rgba(62,207,142,.45);color:#7de5b8;background:rgba(62,207,142,.07)}
-  .pbtn.bad{border-color:rgba(255,107,107,.4);color:#ff9b9b;background:rgba(255,107,107,.07)}
+  .pbtn:active{transform:scale(.955);background:var(--press)}
+  .pbtn.good{border-color:rgba(62,207,142,.45);color:var(--good-ink);background:rgba(62,207,142,.07)}
+  .pbtn.bad{border-color:rgba(255,107,107,.4);color:var(--bad-ink);background:rgba(255,107,107,.07)}
   .pbtn .ct{font-size:19px;font-weight:800;color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
   .pbtn .ct.z{color:var(--dim);opacity:.45}
   .pgrid.sm{grid-template-columns:repeat(4,1fr)}
@@ -322,10 +359,12 @@
 
     /* nav becomes a thumb-reachable bottom bar */
     nav{position:fixed;left:0;right:0;bottom:0;margin:0;border-radius:0;padding:5px 6px;
-      border-top:1px solid var(--line);background:rgba(23,27,33,.97);backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);background:var(--nav-bg);backdrop-filter:blur(10px);
       padding-bottom:calc(5px + env(safe-area-inset-bottom));z-index:40}
     /* every control below is sized to the 44px minimum touch target */
     nav button{flex:1;font-size:11px;padding:14px 3px;min-height:44px}
+    /* nav leaves the header on a phone, so push the toggle to the right edge */
+    .themebtn{margin-left:auto;width:44px;height:44px}
 
     /* compact scoreboard */
     .score{padding:10px 12px;gap:8px;margin-bottom:11px;border-radius:12px}
@@ -377,6 +416,9 @@
     th,td{padding:6px 7px}
   }
 
+  .themebtn{order:3;width:34px;height:34px;display:grid;place-items:center;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:16px;line-height:1}
+  .themebtn:hover{color:var(--fg);background:var(--hover)}
   .syncpill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted);
     background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
   .syncpill[hidden]{display:none}
@@ -400,6 +442,7 @@
   <div class="bar">
     <div class="brand">🏐 Volleyball <span>Stats</span></div>
     <button class="syncpill" id="syncpill" hidden data-v-sync title="Shared data"></button>
+    <button class="themebtn" id="themebtn" type="button"></button>
     <nav>
       <button data-v="match" class="on">Match</button>
       <button data-v="box">Box Score</button>
@@ -2255,6 +2298,30 @@ if('serviceWorker' in navigator &&
   });
   addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
+
+/* ---------- light / dark ----------
+   Follows the phone's setting until someone taps the toggle; after that their
+   pick sticks on this device (it's not part of the shared data). */
+const THEME_KEY = 'vbstats.theme';
+const prefersLight = matchMedia('(prefers-color-scheme: light)');
+function isDark(){
+  const t = document.documentElement.dataset.theme;
+  return t ? t === 'dark' : !prefersLight.matches;
+}
+function paintTheme(){
+  const dark = isDark(), b = document.getElementById('themebtn');
+  b.textContent = dark ? '☀︎' : '☾';
+  b.title = b.ariaLabel = `Switch to ${dark ? 'light' : 'dark'} mode`;
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#0f1216' : '#f4f6f9';
+}
+document.getElementById('themebtn').onclick = () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+  paintTheme();
+};
+prefersLight.addEventListener('change', paintTheme);
+paintTheme();
 
 /* ---------- boot ---------- */
 if(!S.activeMatch && S.matches.length) S.activeMatch = S.matches.at(-1).id;
