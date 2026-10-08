@@ -26,7 +26,8 @@
     --court:#0d1116; --court-floor:#141a21; --court-line:#3a4553; --court-bound:#93a1b1;
     --court-label:#66727f; --court-chip:#1e242c;
     /* shot chart: colour = where the hitter took off; validated all-pairs (lines cross) */
-    --from-l:#d6395a; --from-m:#c98500; --from-r:#3987e5; --from-b:#7d8896;
+    --from-l:#d6395a; --from-m:#f5c400; --from-r:#3987e5; --from-b:#7d8896;
+    --ym-halo:none;
     --radius:10px;
     color-scheme:dark;
     font-synthesis-weight:none;
@@ -41,7 +42,9 @@
       --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
       --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
       --court-label:#7a8594; --court-chip:#ffffff;
-      --from-l:#c4304a; --from-m:#b08300; --from-r:#2a78d6; --from-b:#8b95a2;
+      --from-l:#c4304a; --from-m:#f5c400; --from-r:#2a78d6; --from-b:#8b95a2;
+      /* true yellow is ~1.6:1 on the light court, so middle marks get a thin dark-gold outline */
+      --ym-halo:drop-shadow(0 0 .3px #6b5200);
       color-scheme:light;
     }
   }
@@ -54,7 +57,9 @@
       --header-bg:rgba(244,246,249,.93); --nav-bg:rgba(255,255,255,.97); --row-hover:rgba(0,0,0,.03);
       --court:#e9edf2; --court-floor:#f7f9fb; --court-line:#c5cdd7; --court-bound:#6b7785;
       --court-label:#7a8594; --court-chip:#ffffff;
-      --from-l:#c4304a; --from-m:#b08300; --from-r:#2a78d6; --from-b:#8b95a2;
+      --from-l:#c4304a; --from-m:#f5c400; --from-r:#2a78d6; --from-b:#8b95a2;
+      /* true yellow is ~1.6:1 on the light court, so middle marks get a thin dark-gold outline */
+      --ym-halo:drop-shadow(0 0 .3px #6b5200);
       color-scheme:light;
     }
   *{box-sizing:border-box}
@@ -244,15 +249,17 @@
 
   /* ============ shot chart ============
      Colour = where the hitter took off: power red, middle yellow, right side
-     blue, back row / unknown grey. Red vs yellow is the hard pair for
-     red-green colour blindness, so these exact shades were picked by running
-     the all-pairs check (lines cross) in both themes; a brighter yellow is
-     distinct but out-weighs the other two on the dark court. Shot type is the end mark (hit circle, tip diamond) and
+     blue, back row / unknown grey. The yellow is a true yellow (#f5c400): it
+     separates from red and blue for every colour-vision type (all-pairs
+     check, since lines cross), at the cost of being visually heavier than
+     the other two. On the light court it's only ~1.6:1, so there it gets a
+     thin dark-gold outline (--ym-halo). Shot type is the end mark (hit circle, tip diamond) and
      outcome is line style (solid kill / dashed not a kill), so nothing rests
      on colour alone. */
   .shots{display:block;width:100%;max-width:400px;margin:0 auto;height:auto;background:var(--court);border:1px solid var(--line);
     border-radius:9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .shots .floor{fill:var(--court-floor)}
+  .shots .ym{filter:var(--ym-halo)}
   .shots .ln{stroke:var(--court-line);stroke-width:.5;fill:none}
   .shots .bound{stroke:var(--court-bound);stroke-width:.8;fill:none}
   .shots .netl{stroke:var(--fg);stroke-width:1.4}
@@ -810,7 +817,7 @@ function shotSvg(events, {pick=null}={}){
     const end = tip
       ? `<path class="end ${miss}" d="M${x} ${y-3}L${x+3} ${y}L${x} ${y+3}L${x-3} ${y}Z" style="${paint}"/>`
       : `<circle class="end ${miss}" cx="${x}" cy="${y}" r="2.1" style="${paint}"/>`;
-    return `<g><title>${esc(title)}</title>
+    return `<g ${ev.from === 'M' ? 'class="ym"' : ''}><title>${esc(title)}</title>
       ${from ? `<line class="mk ${miss}" x1="${from[0]}" y1="${from[1]}" x2="${x}" y2="${y}" stroke="${col}"/>` : ''}
       ${end}</g>`;
   }).join('');
