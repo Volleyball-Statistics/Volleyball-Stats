@@ -202,6 +202,10 @@
   .item{display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--panel2);
     border:1px solid var(--line);border-radius:9px}
   .item .ttl{font-weight:700;font-size:13.5px}
+  .mitem .acts{display:flex;gap:6px;align-items:center}
+  .mitem .ttl .badge{margin-left:6px;vertical-align:2px}
+  .setsel{display:none}
+  details.fullbox > summary{display:none}
   .item .sub{font-size:11.5px;color:var(--dim)}
   .item.on{border-color:var(--accent)}
   .badge{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -398,6 +402,41 @@
     .court{padding:6px}
     .hint .wide{display:none}
     .cats{display:none}
+
+    /* --- every control at least 44px; 16px inputs so iOS doesn't zoom on focus --- */
+    .btn{min-height:44px}
+    .btn.sm{min-height:44px;padding:8px 12px;font-size:13px}
+    input,select{min-height:44px;font-size:16px}
+    .teamtabs button{min-height:44px;font-size:13px}
+    .log .ev{min-height:44px}
+    .place summary,details.more summary{min-height:44px}
+    .kbhint{display:none}
+
+    /* match history: the buttons get their own full-width row under the title */
+    .mitem{flex-wrap:wrap}
+    .mitem .minfo{flex:1 1 100%}
+    .mitem .spacer{display:none}
+    .mitem .acts{flex:1 1 100%}
+    .mitem .acts .btn{flex:1}
+
+    /* roster rows: name shrinks so the row never wraps; delete is set apart */
+    .list .item{gap:8px;padding:9px 10px}
+    .list .item [data-pname]{min-width:0 !important}
+    .pdel{width:44px;margin-left:6px}
+
+    /* scoreboard: the set picker moves into the middle column, saving a row */
+    .setpills{display:none}
+    .setsel{display:block;width:100%;margin-top:6px;font-size:14px;padding:6px}
+    .mid .setno{display:none}
+
+    /* box score: the wide table folds behind a tap */
+    details.fullbox > summary{display:flex;align-items:center;min-height:44px;cursor:pointer;
+      list-style:none;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+      color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:0 12px}
+    details.fullbox > summary::-webkit-details-marker{display:none}
+    details.fullbox > summary::after{content:'▾';margin-left:auto}
+    details.fullbox[open] > summary{margin-bottom:9px}
+    details.fullbox[open] > summary::after{content:'▴'}
     .teamtabs.boxteams{display:flex}
     .boxteams button{min-height:44px;font-size:13px}
     .boxside.off{display:none}
@@ -672,6 +711,9 @@ const dec = (v,n=2) => v===null ? '—' : v.toFixed(n);
 const jersey = p => String(p.number ?? '').trim();
 const pFull  = p => [jersey(p) ? '#'+jersey(p) : '', (p.name||'').trim()].filter(Boolean).join(' ') || 'Unnamed';
 const pDash  = p => (p.name||'').trim() ? esc(p.name) : '<span style="color:var(--dim)">—</span>';
+/* name or nothing: opponents are usually numbers only, and a dash under every
+   number reads as noise, not as "no name" */
+const pName  = p => esc((p.name||'').trim());
 const half = v => Number.isInteger(v) ? String(v) : v.toFixed(1);
 const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -879,7 +921,7 @@ function vMatch(){
   const roster = t.players.map(p=>`
     <button class="pchip ${sel===p.id?'on':''}" data-sel="${p.id}">
       <span class="no num">${esc(jersey(p) || '–')}</span>
-      <span class="pn">${pDash(p)}</span>
+      ${pName(p) ? `<span class="pn">${pName(p)}</span>` : ''}
       ${p.pos ? `<span class="pos">${esc(p.pos)}</span>` : ''}
     </button>`).join('');
 
@@ -947,6 +989,10 @@ function vMatch(){
     </div>
     <div class="mid">
       <div class="setno">Set ${ui.set}</div>
+      <select class="setsel" data-setsel aria-label="Set">
+        ${m.sets.map((st,i)=>`<option value="${i+1}" ${ui.set===i+1?'selected':''}>Set ${i+1} · ${st.a}–${st.b}</option>`).join('')}
+        <option value="new">＋ Start set ${m.sets.length+1}</option>
+      </select>
       Sets ${m.sets.filter(s=>s.a>s.b).length} – ${m.sets.filter(s=>s.b>s.a).length}
     </div>
     <div class="side b">
@@ -979,7 +1025,7 @@ function vMatch(){
                  <span style="color:var(--accent)">${sel==='TEAM' ? 'Team' : esc(pFull(player(sel)))}</span>
                </h2>
                <div class="spacer"></div>
-               <button class="btn sm" data-undo ${m.events.length?'':'disabled'}>↶ Undo (Z)</button>
+               <button class="btn sm" data-undo ${m.events.length?'':'disabled'}>↶ Undo<span class="kbhint"> (Z)</span></button>
              </div>
              <div class="live" title="Match to date. Attempts = Kills + Attack Errors + Kept in Play — kills and errors count themselves.">
                <span><b class="num">${mtd.kill}</b> K</span>
@@ -1215,6 +1261,14 @@ function middlePlays(m, teamId, {playerId=null, shot=null, set=null}={}, active=
     </table></div>`;
 }
 
+/* On a phone the 22-column table hid the shot chart ~1,100px down; it starts
+   folded there (the key numbers stay visible) and open on a desktop. Once
+   someone toggles it, their choice wins on both. */
+function fullBoxOpen(){
+  const roomy = typeof matchMedia === 'function' ? matchMedia('(min-width:701px)').matches : true;
+  return S.ui.fullBox ?? roomy;
+}
+
 function teamBox(m, teamId, f){
   const t = team(teamId);
   const agg = tally(m, {...f, teamId});
@@ -1229,7 +1283,7 @@ function teamBox(m, teamId, f){
   const body = rows.map(({p,r})=>`
     <tr>
       <td class="num">${esc(jersey(p))}</td>
-      <td>${p.id==='TEAM' ? esc(p.name) : pDash(p)}${p.pos?` <span style="color:var(--dim);font-size:11px">${esc(p.pos)}</span>`:''}</td>
+      <td>${p.id==='TEAM' ? esc(p.name) : (pName(p) || (p.pos ? '' : pDash(p)))}${p.pos?` <span style="color:var(--dim);font-size:11px">${esc(p.pos)}</span>`:''}</td>
       ${COLS.map(c=>`<td class="num ${c[3]||''} ${cellTone(c,r)}">${c[2](r)}</td>`).join('')}
     </tr>`).join('');
 
@@ -1247,6 +1301,8 @@ function teamBox(m, teamId, f){
       <div class="kpi"><div class="l">Pass Rating</div><div class="v">${dec(passRating(tot))}</div></div>
       <div class="kpi"><div class="l">Errors</div><div class="v">${errors(tot)}</div></div>
     </div>
+    <details class="fullbox" ${fullBoxOpen() ? 'open' : ''}>
+    <summary>Full box score</summary>
     <div class="tw"><table>
       <thead><tr>
         <th title="Jersey number">#</th><th title="Player">Player</th>
@@ -1260,6 +1316,7 @@ function teamBox(m, teamId, f){
         </tr>
       </tbody>
     </table></div>
+    </details>
   </div>`;
 }
 function cellTone(c, r){
@@ -1286,7 +1343,7 @@ function vTeams(){
             <select data-ppos="${p.id}">
               ${POSITIONS.map(o=>`<option ${o===(p.pos||'')?'selected':''} value="${o}">${o||'—'}</option>`).join('')}
             </select>
-            <button class="btn sm danger" data-delplayer="${p.id}">×</button>
+            <button class="btn sm danger pdel" data-delplayer="${p.id}" aria-label="Remove ${esc(pFull(p))}" title="Remove player">×</button>
           </div>`).join('') || `<div class="empty">No players yet.</div>`}
       </div>
       <div class="row" style="margin-top:11px">
@@ -1319,17 +1376,19 @@ function vMatches(){
 
   const list = [...S.matches].reverse().map(m=>{
     const w = m.sets.filter(s=>s.a>s.b).length, l = m.sets.filter(s=>s.b>s.a).length;
-    return `<div class="item ${m.id===S.activeMatch?'on':''}">
-      <div>
-        <div class="ttl">${esc(teamName(m.teamA))} vs ${esc(teamName(m.teamB))}</div>
+    return `<div class="item mitem ${m.id===S.activeMatch?'on':''}">
+      <div class="minfo">
+        <div class="ttl">${esc(teamName(m.teamA))} vs ${esc(teamName(m.teamB))}
+          ${m.id===S.activeMatch ? `<span class="badge">Active</span>` : ''}</div>
         <div class="sub">${esc(m.date)} · ${m.sets.length} set${m.sets.length===1?'':'s'}
           · ${w}–${l} · ${m.events.length} stat${m.events.length===1?'':'s'}</div>
       </div>
       <div class="spacer"></div>
-      ${m.id===S.activeMatch ? `<span class="badge">Active</span>` : ''}
-      <button class="btn sm" data-boxof="${m.id}" title="See this match's box score and placement">Box Score</button>
-      <button class="btn sm" data-open="${m.id}" title="Record into this match">Open</button>
-      <button class="btn sm danger" data-delmatch="${m.id}">Delete</button>
+      <div class="acts">
+        <button class="btn sm" data-boxof="${m.id}" title="See this match's box score and placement">Box Score</button>
+        <button class="btn sm" data-open="${m.id}" title="Record into this match">Open</button>
+        <button class="btn sm danger" data-delmatch="${m.id}">Delete</button>
+      </div>
     </div>`;
   }).join('');
 
@@ -1404,10 +1463,16 @@ function wire(){
   // <details> resets on every re-render, so its open state has to be persisted
   on('details.more','toggle', e => { S.ui.more = e.target.open; save(); });
   on('details.place','toggle', e => { S.ui.court = e.target.open; save(); });
-  on('[data-newset]','click', () => {
+  on('details.fullbox','toggle', e => { S.ui.fullBox = e.target.open; save(); });
+  const newSet = () => {
     const m = current();
     m.sets.push({a:0,b:0}); S.ui.set = m.sets.length; save(); render();
     toast('Set ' + m.sets.length + ' started');
+  };
+  on('[data-newset]','click', newSet);
+  on('[data-setsel]','change', e => {
+    if(e.target.value === 'new') return newSet();
+    S.ui.set = +e.target.value; save(); render();
   });
   on('[data-pt]','click', e => {
     const [side, d] = e.currentTarget.dataset.pt.split(',');
@@ -1448,7 +1513,11 @@ function wire(){
   on('[data-delplayer]','click', e => {
     const pid = e.currentTarget.dataset.delplayer;
     const stats = S.matches.reduce((n,m)=>n + m.events.filter(ev=>ev.playerId===pid).length, 0);
-    if(stats && !confirm('This player has '+stats+' recorded stat(s). Delete anyway? Their stats will be removed too.')) return;
+    const who = pFull(player(pid));
+    // always ask: the button sits next to the position picker, so a stray tap is easy
+    if(!confirm(stats
+      ? `Remove ${who}? They have ${stats} recorded stat${stats===1?'':'s'}, which will be removed too.`
+      : `Remove ${who} from the roster?`)) return;
     for(const t of S.teams) t.players = t.players.filter(p=>p.id!==pid);
     for(const m of S.matches) m.events = m.events.filter(ev=>ev.playerId!==pid);
     save(); render();
