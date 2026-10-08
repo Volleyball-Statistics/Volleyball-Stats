@@ -9,7 +9,7 @@
 
    Bump VERSION whenever index.html changes, or phones will keep serving
    the old cached copy forever. */
-const VERSION = 'vbstats-2026-10-08f';
+const VERSION = 'vbstats-2026-10-08g';
 
 const ASSETS = [
   './',
@@ -20,6 +20,7 @@ const ASSETS = [
   './icon-maskable.png',
   './apple-touch-icon.png',
   './vendor/supabase-js-2.117.3.js',
+  './demo.json',
 ];
 
 self.addEventListener('install', e => {
