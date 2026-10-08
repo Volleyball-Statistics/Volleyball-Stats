@@ -158,6 +158,13 @@ where it landed:
    appear beside Hit / Tip (`3` / `5` / `6` on the keyboard). It isn't remembered between attacks, since a
    middle's set changes play to play. Leave it blank and the attack still counts. The list is
    `MIDDLE_PLAYS` in `index.html`.
+
+   Calls use the standard two-digit system: the **first digit is the 1 m slot along the net**
+   the ball is hit from, counted from the hitter's left (power-side) antenna, 1–9; the second
+   is set height / tempo. So a **30 is hit about 2.5 m in from the power side — off-centre,
+   not from the middle**; a 51 is at the centre; a 60 about 1 m right of centre. The popup
+   marks each slot on the net (tap the dot or the button), and the shot chart starts each
+   middle attack's line at its slot. Any call you add is positioned from its first digit.
 4. **Dug by (optional, In Play only).** The other team's numbers appear; tap the defender
    who dug it and a Dig is logged for them too. It saves switching team tabs mid-rally, and
    you stay on the attacking team. Pick it *before* the landing spot.
